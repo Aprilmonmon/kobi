@@ -86,9 +86,42 @@
             margin-top: 30px;
             max-width: 300px;
         }
+
+        /* 自定義對話框樣式 */
+        #customModal {
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); 
+            z-index: 1000; 
+            justify-content: center; 
+            align-items: center;
+        }
+        .modal-content {
+            background: white; 
+            padding: 30px; 
+            border-radius: 25px; 
+            border: 3px solid var(--line-brown); 
+            width: 80%; 
+            max-width: 300px; 
+            text-align: center; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body>
+
+    <div id="customModal">
+        <div class="modal-content">
+            <h3 id="modalTitle">今天要餵多少錢？</h3>
+            <input type="number" id="modalInput" style="width:100%; padding:12px; font-size:20px; border-radius:10px; border:2px solid var(--primary-blue); margin-bottom:20px; outline:none; box-sizing: border-box;" placeholder="請輸入金額">
+            <div style="display:flex; gap:10px;">
+                <button onclick="closeModal()" style="flex:1; background:#eee; border:none; padding:10px; border-radius:10px; cursor:pointer; font-size:16px;">取消</button>
+                <button onclick="confirmMoney()" style="flex:1; background:var(--primary-blue); color:white; border:none; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:16px;">確定</button>
+            </div>
+        </div>
+    </div>
 
     <div class="kobi-container">
         <img src="https://aprilmonmon.github.io/kobi/kobi-logo.png" alt="KOBI">
@@ -107,58 +140,37 @@
     <canvas id="myChart"></canvas>
 
     <script>
-        // 資料初始化：從手機本地儲存讀取
+        // 資料初始化
         let data = JSON.parse(localStorage.getItem('kobiData')) || { save: 0, spend: 0 };
+        let currentAction = '';
 
         function updateUI() {
             document.getElementById('totalBalance').innerText = `$${data.save - data.spend}`;
             renderChart();
             localStorage.setItem('kobiData', JSON.stringify(data));
         }
-<body>
-    <div id="customModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
-        <div style="background:white; padding:30px; border-radius:25px; border:3px solid #9E7E6B; width:80%; max-width:300px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
-            <h3 id="modalTitle" style="color:#6D5B4F; margin-top:0;">今天要餵多少錢？</h3>
-            <input type="number" id="modalInput" style="width:100%; padding:12px; font-size:20px; border-radius:10px; border:2px solid #A2D2FF; margin-bottom:20px; outline:none; box-sizing: border-box;" placeholder="請輸入金額">
-            <div style="display:flex; gap:10px;">
-                <button onclick="closeModal()" style="flex:1; background:#eee; border:none; padding:10px; border-radius:10px; cursor:pointer;">取消</button>
-                <button onclick="confirmMoney()" style="flex:1; background:#A2D2FF; color:white; border:none; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer;">確定</button>
-            </div>
-        </div>
-    </div>
-    
-    ```
 
----
-
-### 2. JavaScript 部分：取代原本的 `updateMoney` 函數
-在 `<script>` 標籤中，找到原本的 `function updateMoney(type) { ... }`，並用這段新的邏輯將其**完整取代**：
-
-```javascript
-    // 2. 取代原本的 updateMoney 函數，並加入控制對話框的邏輯
-    let currentAction = ''; 
-
-    function updateMoney(type) {
-        currentAction = type;
-        // 根據存或花，動態改變對話框標題
-        document.getElementById('modalTitle').innerText = (type === 'save' ? "今天要餵摳比多少錢？" : "摳比幫你搬走了多少錢？");
-        document.getElementById('modalInput').value = ''; // 清空輸入框
-        document.getElementById('customModal').style.display = 'flex'; // 顯示對話框
-        document.getElementById('modalInput').focus(); // 自動聚焦輸入框
-    }
-
-    function closeModal() {
-        document.getElementById('customModal').style.display = 'none'; // 隱藏對話框
-    }
-
-    function confirmMoney() {
-        let amount = document.getElementById('modalInput').value;
-        if (amount && !isNaN(amount)) {
-            data[currentAction] += parseInt(amount); // 更新資料
-            updateUI(); // 重新渲染畫面與圓餅圖
-            closeModal(); // 關閉對話框
+        // 呼叫自定義對話框
+        function updateMoney(type) {
+            currentAction = type;
+            document.getElementById('modalTitle').innerText = (type === 'save' ? "今天要餵摳比多少錢？" : "摳比幫你搬走了多少錢？");
+            document.getElementById('modalInput').value = ''; 
+            document.getElementById('customModal').style.display = 'flex'; 
+            document.getElementById('modalInput').focus();
         }
-    }
+
+        function closeModal() {
+            document.getElementById('customModal').style.display = 'none';
+        }
+
+        function confirmMoney() {
+            let amount = document.getElementById('modalInput').value;
+            if (amount && !isNaN(amount)) {
+                data[currentAction] += parseInt(amount);
+                updateUI();
+                closeModal();
+            }
+        }
 
         // 圓餅圖渲染
         let myChart;
@@ -175,10 +187,20 @@
                         borderWidth: 0
                     }]
                 },
-                options: { cutout: '70%' }
+                options: { 
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            labels: {
+                                font: { weight: 'bold' }
+                            }
+                        }
+                    }
+                }
             });
         }
 
+        // 啟動網頁
         updateUI();
     </script>
 </body>
