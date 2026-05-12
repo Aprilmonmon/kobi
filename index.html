@@ -7,52 +7,60 @@
     <title>摳比 KOBI - 你的夢想存錢小管家</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; }
+        :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; --ecru: #F5F5DC; }
         body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
-        
-        .kobi-container { width: 160px; height: 160px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 10px 0; box-shadow: 0 8px 0px var(--primary-blue); overflow: hidden; cursor: pointer; }
+        .kobi-container { width: 140px; height: 140px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 10px 0; box-shadow: 0 8px 0px var(--primary-blue); cursor: pointer; transition: 0.2s; }
+        .kobi-container:active { transform: translateY(4px); box-shadow: 0 4px 0px var(--primary-blue); }
         .kobi-container img { width: 80%; height: auto; }
-
         .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 90%; max-width: 350px; margin-bottom: 15px; }
         .balance-amount { font-size: 28px; font-weight: bold; color: var(--primary-blue); }
-
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90%; max-width: 350px; }
         button { padding: 12px; border-radius: 12px; border: 2px solid var(--line-brown); font-size: 16px; font-weight: bold; cursor: pointer; }
-        .btn-save { background-color: var(--primary-blue); color: white; }
-        .btn-spend { background-color: white; color: var(--line-brown); }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 30px; border: 3px solid var(--line-brown); width: 85%; max-width: 320px; text-align: center; box-shadow: 0 10px 0 var(--line-brown); }
-        
-        .fortune-title { color: var(--primary-blue); font-size: 20px; font-weight: bold; margin-bottom: 15px; }
-        .fortune-text { font-size: 17px; line-height: 1.6; color: var(--text-color); margin-bottom: 20px; white-space: pre-line; }
-        
-        select, input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 12px; border: 2px solid #eee; box-sizing: border-box; font-size: 16px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 30px; border: 3px solid var(--line-brown); width: 88%; max-width: 340px; text-align: center; max-height: 80vh; overflow-y: auto; }
+        .shop-item { background: var(--bg-color); border-radius: 20px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; text-align: left; }
+        .shop-item b { color: var(--line-brown); font-size: 16px; }
+        .shop-price { color: var(--primary-blue); font-weight: bold; display: block; margin: 5px 0; }
+        .shop-btns { display: flex; gap: 8px; margin-top: 10px; }
+        .btn-shop { flex: 1; padding: 8px; font-size: 11px; border-radius: 8px; border: 1px solid var(--line-brown); background: white; }
+        .btn-target { background: var(--primary-blue); color: white; border: none; }
         .history-list { width: 90%; max-width: 350px; margin-top: 20px; background: white; border-radius: 15px; padding: 10px; border: 1px solid #eee; }
-        .history-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; align-items: center; }
-        .item-save { color: #5dade2; } .item-spend { color: #9E7E6B; }
+        .history-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div id="customModal" class="modal">
+    <!-- 抽籤彈窗 -->
+    <div id="fortuneModal" class="modal">
         <div class="modal-content">
-            <h3 id="modalTitle">記帳囉</h3>
-            <select id="categorySelect"></select>
-            <input type="number" id="modalAmount" placeholder="金額">
-            <input type="text" id="modalNote" placeholder="備註（選填）">
-            <div style="display:flex; gap:10px;">
-                <button onclick="closeModal()" style="flex:1;">取消</button>
-                <button onclick="confirmEntry()" style="flex:1; background:var(--primary-blue); color:white;">確定</button>
-            </div>
+            <div id="fortuneTitle" style="color:var(--primary-blue); font-weight:bold; margin-bottom:10px;">🌟 摳比今日開示 🌟</div>
+            <div id="fortuneText" style="line-height:1.6; margin-bottom:15px; white-space:pre-line;"></div>
+            <button onclick="closeModal('fortuneModal')" style="width:100%; background:var(--primary-blue); color:white; border:none; border-radius:15px;">收下好運 ✨</button>
         </div>
     </div>
 
-    <div id="fortuneModal" class="modal">
+    <!-- 夢想福利社彈窗 -->
+    <div id="shopModal" class="modal">
         <div class="modal-content">
-            <div id="fortuneTitle" class="fortune-title">🌟 摳比開示 🌟</div>
-            <div id="fortuneText" class="fortune-text"></div>
-            <button onclick="closeFortune()" style="width:100%; background:var(--primary-blue); color:white; border:none; padding:12px; border-radius:15px; font-weight:bold;">收下好運 ✨</button>
+            <h3 style="color:var(--line-brown);">☁️ 夢想福利社 ☁️</h3>
+            <p style="font-size:12px; color:#999;">在這裡把夢想具體化，更有動力存錢！</p>
+            <div class="shop-item">
+                <b>Gorpcore 機能登山鞋 (推薦款)</b>
+                <span class="shop-price">$4,500</span>
+                <div class="shop-btns">
+                    <button class="btn-shop" onclick="window.open('https://www.merrell.com.tw/')">看細節</button>
+                    <button class="btn-shop btn-target" onclick="setDream('機能登山鞋', 4500)">設為夢想</button>
+                </div>
+            </div>
+            <div class="shop-item">
+                <b>正米色厚磅棉 Tee</b>
+                <span class="shop-price">$1,280</span>
+                <div class="shop-btns">
+                    <button class="btn-shop" onclick="window.open('https://shopee.tw/')">看細節</button>
+                    <button class="btn-shop btn-target" onclick="setDream('米色Tee', 1280)">設為夢想</button>
+                </div>
+            </div>
+            <button onclick="closeModal('shopModal')" style="width:100%; margin-top:10px; background:#eee; border:none; border-radius:15px; padding:10px;">再看看</button>
         </div>
     </div>
 
@@ -61,182 +69,117 @@
     </div>
 
     <div class="balance-card">
-        <div id="totalBalanceText">目前摳比餘額</div>
+        <div id="dreamTitle" style="font-size:14px; color:#999; margin-bottom:5px;">目前摳比餘額</div>
         <div class="balance-amount" id="totalBalance">$0</div>
+        <div id="progressText" style="font-size:12px; margin-top:5px; color:var(--line-brown); font-weight:bold;"></div>
     </div>
 
     <div class="btn-group">
-        <button class="btn-save" onclick="openModal('save')">收入</button>
-        <button class="btn-spend" onclick="openModal('spend')">支出</button>
+        <button style="background:var(--primary-blue); color:white;" onclick="alert('記帳功能開發中')">收入</button>
+        <button style="background:white; color:var(--line-brown);" onclick="alert('記帳功能開發中')">支出</button>
     </div>
 
-    <canvas id="myChart"></canvas>
-
-    <div class="history-list" id="historyList">
-        <div style="font-weight:bold; margin-bottom:5px;">最近紀錄</div>
-    </div>
+    <canvas id="myChart" style="margin-top:20px;"></canvas>
+    <div class="history-list" id="historyList"></div>
 
     <script>
+    // 完整的 50 則籤詩資料
     const kobiFortunes = [
         "財神爺今天住你家，別忘了幫祂準備下午茶！☕\n🌈 幸運色：暖陽黃",
-        "錢錢沒有不見，它們只是去叫更多朋友過來找你。💰\n🌈 幸運色：薄荷綠",
-        "今日宜記帳，不宜衝動購物。摳比在看著你喔！👀\n🌈 幸運色：深海藍",
-        "錢包像磁鐵一樣，正在強力吸引大鈔進帳。🧲\n🌈 幸運色：閃耀金",
-        "運勢大吉！穩紮穩打，財富就會滴水不漏。⛰️\n🌈 幸運色：大地棕",
-        "對自己好也是一種投資，適合買個小禮物鼓勵自己。🎁\n🌈 幸運色：乾燥玫瑰粉",
-        "夢想很貴，每一筆省錢都在為它增添動力！🔥\n🌈 幸運色：火焰橘",
         "今日財運爆棚，穿漂亮一點，錢財自然跟上。✨\n🌈 幸運色：優雅正米色",
-        "錢錢只是出遠門，記好帳，它們就知道回家的路。🏠\n🌈 幸運色：純淨白",
-        "大吉！適合開啟新計畫，摳比會陪著你。🐹\n🌈 幸運色：天空藍",
-        "你的辛苦都有價值，加薪與好運就在不遠處！📈\n🌈 幸運色：薰衣草紫",
-        "今日宜斷捨離，清掉舊物，好運才有位置住進來。🧹\n🌈 幸運色：迷霧灰",
-        "存錢筒說它肚子餓了，快餵它吃一點閃亮的銅板。🪙\n🌈 幸運色：古銅色",
-        "今日不宜猶豫不決，看準了就出手，好運不等人！⚡\n🌈 幸運色：亮眼紅",
-        "喝杯水深呼吸，財富正在平靜時刻慢慢累積。💧\n🌈 幸運色：透亮藍",
-        "省下那杯拿鐵，夢想基金就又多了一塊磚。☕\n🌈 幸運色：咖啡棕",
-        "發票記得對，或許那一千萬中獎人就是你！🎫\n🌈 幸運色：幸運綠",
-        "穿上機能鞋走更遠的路，去遇見全新的財富。👟\n🌈 幸運色：極致黑",
-        "戶頭數字很害羞，但只要持續記帳，它會慢慢長大。🌱\n🌈 幸運色：嫩芽綠",
-        "今日適合與人合作，兩個人能摳到更多錢。🤝\n🌈 幸運色：和諧靛藍",
-        "別小看零錢，聚在一起能帶你去想去的地方。🌈\n🌈 幸運色：彩虹色",
-        "你的才華就是最棒資產，今天請自信展現它！🌟\n🌈 幸運色：檸檬黃",
-        "會有一筆意外小收入，可能是很久以前借出的錢。💸\n🌈 幸運色：淺草綠",
-        "今天適合觀望，不動如山也是一種賺錢的方式。⛰️\n🌈 幸運色：墨岩綠",
-        "專心投入手邊的事，未來的你會感謝現在的努力。🎓\n🌈 幸運色：孔雀藍",
-        "精準的預算控制，是你最安心的財富後盾。💖\n🌈 幸運色：蜜桃粉",
-        "記帳就是成功的地圖，一步步走向你的夢想。🗺️\n🌈 幸運色：象牙白",
-        "讓財富像森林一樣茂盛生長，今天適合接觸大自然。🌿\n🌈 幸運色：森林綠",
-        "別人的眼光不重要，重要是你存錢目標很閃耀。💎\n🌈 幸運色：鑽石銀",
-        "早點睡覺，好夢裡可能有致富的小暗示喔！🛌\n🌈 幸運色：午夜藍",
-        "去公園走走吧，免費的芬多精是最高級的享受。🌳\n🌈 幸運色：橄欖綠",
-        "你的記帳習慣超越 90% 的人了，請繼續保持！🏆\n🌈 幸運色：琥珀橙",
-        "今日宜自炊，親手做的便當有「存錢」的味道。🍱\n🌈 幸運色：肉桂棕",
-        "錢財就像愛人，你越細心呵護它就越離不開你。❤️\n🌈 幸運色：寶石紅",
-        "適合學習新技能，大腦增值，口袋也會升值。📚\n🌈 幸運色：知性青",
-        "不怕目標遠，只要開始走，每一步都在縮短距離。🛤️\n🌈 幸運色：柏油灰",
-        "送你一朵花，祝你財富花開富貴，驚喜不斷。🌺\n🌈 幸運色：櫻花粉",
-        "好的投資需要時間發酵，請給財富多一點耐心。⏳\n🌈 幸運色：焦糖色",
-        "夢想清單正在發光，因為你每天都在為它充電。🔋\n🌈 幸運色：螢光綠",
-        "今日適合微笑，財神爺最喜歡靠近愛笑的人。😁\n🌈 幸運色：亮橘色",
-        "給予也是一種獲得，小小分享會換來大大好運。🎈\n🌈 幸運色：糖果藍",
-        "惜物就是最大的福氣，省下的錢會變成喜歡的樣子。♻️\n🌈 幸運色：湖水綠",
-        "累的時候看一眼進度條，夢想的動力就回來了！🚀\n🌈 幸運色：星空銀",
-        "相信自己的分析與紀錄，不盲從就是最好的投資。🛡️\n🌈 幸運色：鋼鐵灰",
-        "你值得美好生活，這一切從學會管錢開始。🥂\n🌈 幸運色：香檳金",
-        "記得檢查包裹，說不定裡面藏著意外驚喜。📦\n🌈 幸運色：原木色",
         "不管世界怎麼變，摳比永遠在手機裡支持你！🐹\n🌈 幸運色：摳比藍",
-        "今日宜閱讀，文字的力量會帶給你新的商機。📖\n🌈 幸運色：經典黑",
-        "好運就像公車，錯過這班，下一班會載你去更遠的地方。🚌\n🌈 幸運色：亮黃色",
-        "你是最棒的，今天的你比昨天更懂如何創造財富。🥇\n🌈 幸運色：榮耀金"
+        "小錢不入，大錢不來。今天的你適合存下一張百鈔。💰\n🌈 幸運色：薄荷綠",
+        "夢想不是用想的，是靠你一筆一筆記下來的。📈\n🌈 幸運色：經典白",
+        "今日宜：對自己好一點。買杯咖啡也是種創業投資。☕\n🌈 幸運色：拿鐵棕",
+        "錢包像呼吸，有出才有入，別太緊繃。🌬️\n🌈 幸運色：天空藍",
+        "今天的你閃閃發光，適合處理延宕已久的帳單。⚡\n🌈 幸運色：亮銀色",
+        "好事正在發生，只是它走得比較慢，耐心點。🚶\n🌈 幸運色：森林綠",
+        "創業之路不孤單，摳比陪你算好每一分錢。🐹\n🌈 幸運色：暖心橘",
+        "適合與夥伴討論未來，今天的直覺很準。💡\n🌈 幸運色：神秘紫",
+        "理財就是理生活。今天把收據整理一下吧！📄\n🌈 幸運色：簡約灰",
+        "你努力的樣子很美，連錢幣都想跳進你的口袋。💃\n🌈 幸運色：玫瑰粉",
+        "今日宜：深呼吸。創業的焦慮會隨風而去。🍃\n🌈 幸運色：清新綠",
+        "錢不是消失了，是變成你喜歡的樣子留下來。👗\n🌈 幸運色：象牙白",
+        "保持好奇心，今天可能會有意想不到的小偏財。🎁\n🌈 幸運色：亮橘色",
+        "穩定進步就是最大的捷徑。一步一步來。🐢\n🌈 幸運色：深藍色",
+        "今天的你，比昨天的你更富有，不管是錢還是經驗。🌟\n🌈 幸運色：琥珀色",
+        "投資自己永遠是報酬率最高的項目。📚\n🌈 幸運色：文青綠",
+        "適合清理不需要的開銷，輕裝上陣。🎒\n🌈 幸運色：卡其色",
+        "生活有苦有甜，記帳有進有出，這就是人生。🍭\n🌈 幸運色：珊瑚紅",
+        "今天的財運像太陽一樣耀眼，記得微笑。😊\n🌈 幸運色：金黃色",
+        "適合低調行事，悄悄地累積財富。🤫\n🌈 幸運色：碳黑色",
+        "給自己一個讚，你已經做得很棒了。👍\n🌈 幸運色：翠綠色",
+        "財富是給有準備的人。你準備好了嗎？🔥\n🌈 幸運色：烈焰紅",
+        "今天適合去戶外走走，機能穿搭能帶來好運。🏔️\n🌈 幸運色：岩石灰",
+        "別盯著數字看，去看看遠方的目標。🔭\n🌈 幸運色：海軍藍",
+        "每一筆支出都是在為你想要的未來投票。🗳️\n🌈 幸運色：粉紫色",
+        "今天的開示：少喝一杯珍奶，夢想進度快 1%。珍珠奶茶可以省，夢想不能省。🧋\n🌈 幸運色：奶茶色",
+        "你的眼光獨特，今天的選物感很強，適合尋寶。💎\n🌈 幸運色：青銅色",
+        "財富感來自內心的富足。今天吃頓好吃的吧！酒要好，錢要存。🍷\n🌈 幸運色：酒紅色",
+        "適合處理稅務或保險相關的事宜，理清頭緒。📁\n🌈 幸運色：湖水綠",
+        "你是自己生命的主理人，記帳只是管理工具。👑\n🌈 幸運色：皇家藍",
+        "今天可能會有貴人相助，記得多說謝謝。🤝\n🌈 幸運色：淺黃色",
+        "夢想清單又多一項？沒關係，努力賺回來！🛒\n🌈 幸運色：丁香紫",
+        "今天適合檢視你的股息或被動收入，讓錢幫你工作。💰\n🌈 幸運色：翡翠綠",
+        "不要怕麻煩，麻煩的事情通常最賺錢。🛠️\n🌈 幸運色：土黃色",
+        "適度的放空能讓大腦更清醒，更有賺錢點子。🧘\n🌈 幸運色：透明色",
+        "今天的你能量滿滿，適合談判或簽約。✒️\n🌈 幸運色：墨綠色",
+        "記得領取你的專屬福利，摳比會幫你留意優惠。🎁\n🌈 幸運色：桃紅色",
+        "把錢花在刀口上，把愛留給重要的人。❤️\n🌈 幸運色：淺粉色",
+        "今日宜：勇敢一點。新的商業機會就在門外。🚪\n🌈 幸運色：寶藍色",
+        "生活要有儀式感，記帳也可以很優雅。🕯️\n🌈 幸運色：正米色",
+        "今天的財位在東方，沒事往東邊走走。🚩\n🌈 幸運色：亮紫色",
+        "保持彈性，計畫趕不上變化時就隨機應變。橡膠感也是種韌性。🧶\n🌈 幸運色：米白色",
+        "創業就是不斷地解決問題。你今天解決了嗎？🔧\n🌈 幸運色：咖啡色",
+        "適合與老友聚會，資訊交換可能帶來財路。📞\n🌈 幸運色：橄欖綠",
+        "聽聽音樂，放鬆心情。好的情緒能吸引好的財運。🎵\n🌈 幸運色：靛藍色",
+        "今天的你有如神助，想做的企劃趕快寫下來。📝\n🌈 幸運色：檸檬黃",
+        "最後一則開示：相信你自己。摳比相信你一定做得到。🐹\n🌈 幸運色：摳比藍"
     ];
+
+    let kobiRecords = JSON.parse(localStorage.getItem('kobiRecords') || '[]');
+    let myDream = JSON.parse(localStorage.getItem('kobiDream') || '{"name": "", "target": 0}');
+
+    async function initLiff() {
+        await liff.init({ liffId: "2010068096-vsSIzIqA" });
+        if (!liff.isLoggedIn()) liff.login();
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('draw') === '1') showKobiFortune();
+        else if (urlParams.get('dream') === '1') document.getElementById('shopModal').style.display = 'flex';
+        updateUI();
+    }
+
+    function setDream(name, price) {
+        myDream = { name: name, target: price };
+        localStorage.setItem('kobiDream', JSON.stringify(myDream));
+        alert(`已將「${name}」設為夢想目標！`);
+        closeModal('shopModal');
+        updateUI();
+    }
 
     function showKobiFortune() {
         const randomIndex = Math.floor(Math.random() * kobiFortunes.length);
-        document.getElementById('fortuneTitle').innerText = "🌟 摳比今日財運開示 🌟";
-        document.getElementById('fortuneText').innerText = kobiFortunes[randomIndex];
+        const fortune = kobiFortunes[randomIndex];
+        let affiliateHtml = "";
+        if (fortune.includes("米色")) affiliateHtml = '\n<a href="https://shopee.tw/" style="color:var(--primary-blue); font-size:12px;">👟 看看推薦的米色選物</a>';
+        if (fortune.includes("機能")) affiliateHtml = '\n<a href="https://www.merrell.com.tw/" style="color:var(--primary-blue); font-size:12px;">🏔️ 戶外機能裝備推薦</a>';
+        
+        document.getElementById('fortuneText').innerHTML = fortune.replace(/\n/g, "<br>") + affiliateHtml;
         document.getElementById('fortuneModal').style.display = 'flex';
     }
 
-    function showKobiDream() {
-        document.getElementById('fortuneTitle').innerText = "☁️ 夢想摳摳摳 ☁️";
-        document.getElementById('fortuneText').innerText = "一步一步慢慢來，摳比會陪你存到目標金額的！加油！💪";
-        document.getElementById('fortuneModal').style.display = 'flex';
-    }
-
-    function closeFortune() { document.getElementById('fortuneModal').style.display = 'none'; }
-
-    async function initLiff() {
-        try {
-            await liff.init({ liffId: "2010068096-vsSIzIqA" });
-            if (!liff.isLoggedIn()) {
-                liff.login();
-            } else {
-                const profile = await liff.getProfile();
-                document.getElementById('totalBalanceText').innerText = `${profile.displayName} 的摳比餘額`;
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('draw') === '1') showKobiFortune();
-                else if (urlParams.get('dream') === '1') showKobiDream();
-            }
-        } catch (error) { console.error("LIFF 失敗", error); }
-        updateUI();
-    }
-
-    function loadData() {
-        try {
-            let saved = localStorage.getItem('kobiRecords');
-            return saved ? JSON.parse(saved) : [];
-        } catch (e) { return []; }
-    }
-
-    let categories = {
-        save: ["薪水", "投資高手", "發獎金啦", "其他"],
-        spend: ["吃喝費", "治裝費", "交通費", "網路手機費用", "玩耍費用", "金融保險費", "學習上進費", "醫療費用", "其他"]
-    };
-
-    let kobiRecords = loadData();
-    let currentType = '';
-
-    initLiff();
-
-    function openModal(type) {
-        currentType = type;
-        document.getElementById('modalTitle').innerText = (type === 'save' ? "增加收入" : "支出項目");
-        const select = document.getElementById('categorySelect');
-        select.innerHTML = categories[type].map(cat => `<option value="${cat}">${cat}</option>`).join('');
-        document.getElementById('modalAmount').value = '';
-        document.getElementById('modalNote').value = '';
-        document.getElementById('customModal').style.display = 'flex';
-    }
-
-    function closeModal() { document.getElementById('customModal').style.display = 'none'; }
-
-    function confirmEntry() {
-        const amount = parseInt(document.getElementById('modalAmount').value);
-        if (amount > 0) {
-            kobiRecords.unshift({
-                id: Date.now(), 
-                type: currentType,
-                category: document.getElementById('categorySelect').value,
-                amount: amount,
-                note: document.getElementById('modalNote').value || "",
-                date: new Date().toLocaleDateString()
-            }); 
-            saveAndUpdate();
-            closeModal();
-        }
-    }
-
-    function deleteRecord(id) {
-        if (confirm("確定要刪除嗎？")) {
-            kobiRecords = kobiRecords.filter(r => r.id !== id);
-            saveAndUpdate();
-        }
-    }
-
-    function saveAndUpdate() {
-        localStorage.setItem('kobiRecords', JSON.stringify(kobiRecords));
-        updateUI();
-    }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
     function updateUI() {
-        let totalSave = 0, totalSpend = 0;
-        const list = document.getElementById('historyList');
-        list.innerHTML = '<div style="font-weight:bold; margin-bottom:5px;">最近紀錄</div>';
-
-        kobiRecords.forEach(r => {
-            if(r.type === 'save') totalSave += r.amount;
-            else totalSpend += r.amount;
-            const item = document.createElement('div');
-            item.className = 'history-item';
-            item.innerHTML = `
-                <span style="flex:1"><b class="item-${r.type}">${r.category}</b> <small style="color:#999;">${r.note}</small></span>
-                <span class="item-${r.type}" style="margin-right:10px;">${r.type==='save'?'+':'-'}${r.amount}</span>
-                <span onclick="deleteRecord(${r.id})" style="cursor:pointer; color:#ccc;">✕</span>
-            `;
-            list.appendChild(item);
-        });
-        document.getElementById('totalBalance').innerText = `$${totalSave - totalSpend}`;
-        renderChart(totalSave, totalSpend);
+        let total = 0, s = 0, p = 0;
+        kobiRecords.forEach(r => { if(r.type === 'save') { total += r.amount; s += r.amount; } else { total -= r.amount; p += r.amount; } });
+        document.getElementById('totalBalance').innerText = `$${total}`;
+        if (myDream.target > 0) {
+            const percent = Math.min(Math.floor((total / myDream.target) * 100), 100);
+            document.getElementById('dreamTitle').innerText = `目標：${myDream.name} ($${myDream.target})`;
+            document.getElementById('progressText').innerText = `達成度 ${percent}% (差 $${Math.max(myDream.target - total, 0)})`;
+        }
+        renderChart(s, p);
     }
 
     let myChart;
@@ -245,13 +188,11 @@
         if (myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'doughnut',
-            data: {
-                labels: ['收入', '支出'],
-                datasets: [{ data: [s, p], backgroundColor: ['#A2D2FF', '#9E7E6B'], borderWidth: 0 }]
-            },
-            options: { cutout: '75%' }
+            data: { labels: ['收入', '支出'], datasets: [{ data: [s||1, p||0], backgroundColor: ['#A2D2FF', '#9E7E6B'], borderWidth: 0 }] },
+            options: { cutout: '80%', plugins: { legend: { display: false } } }
         });
     }
-</script>
+    initLiff();
+    </script>
 </body>
 </html>
