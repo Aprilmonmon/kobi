@@ -9,25 +9,33 @@
     <style>
         :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; }
         body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
+        
         .kobi-container { width: 160px; height: 160px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 10px 0; box-shadow: 0 8px 0px var(--primary-blue); overflow: hidden; cursor: pointer; }
         .kobi-container img { width: 80%; height: auto; }
+
         .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 90%; max-width: 350px; margin-bottom: 15px; }
         .balance-amount { font-size: 28px; font-weight: bold; color: var(--primary-blue); }
+
         .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90%; max-width: 350px; }
         button { padding: 12px; border-radius: 12px; border: 2px solid var(--line-brown); font-size: 16px; font-weight: bold; cursor: pointer; }
         .btn-save { background-color: var(--primary-blue); color: white; }
         .btn-spend { background-color: white; color: var(--line-brown); }
-        #customModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 25px; border: 3px solid var(--line-brown); width: 85%; max-width: 320px; text-align: center; }
-        select, input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 10px; border: 2px solid #ddd; box-sizing: border-box; font-size: 16px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 30px; border: 3px solid var(--line-brown); width: 85%; max-width: 320px; text-align: center; box-shadow: 0 10px 0 var(--line-brown); }
+        
+        .fortune-title { color: var(--primary-blue); font-size: 20px; font-weight: bold; margin-bottom: 15px; }
+        .fortune-text { font-size: 17px; line-height: 1.6; color: var(--text-color); margin-bottom: 20px; white-space: pre-line; }
+        
+        select, input { width: 100%; padding: 12px; margin-bottom: 10px; border-radius: 12px; border: 2px solid #eee; box-sizing: border-box; font-size: 16px; }
         .history-list { width: 90%; max-width: 350px; margin-top: 20px; background: white; border-radius: 15px; padding: 10px; border: 1px solid #eee; }
-        .history-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f9f9f9; font-size: 14px; align-items: center; }
+        .history-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #f9f9f9; font-size: 14px; align-items: center; }
         .item-save { color: #5dade2; } .item-spend { color: #9E7E6B; }
     </style>
 </head>
 <body>
 
-    <div id="customModal">
+    <div id="customModal" class="modal">
         <div class="modal-content">
             <h3 id="modalTitle">記帳囉</h3>
             <select id="categorySelect"></select>
@@ -37,6 +45,14 @@
                 <button onclick="closeModal()" style="flex:1;">取消</button>
                 <button onclick="confirmEntry()" style="flex:1; background:var(--primary-blue); color:white;">確定</button>
             </div>
+        </div>
+    </div>
+
+    <div id="fortuneModal" class="modal">
+        <div class="modal-content">
+            <div id="fortuneTitle" class="fortune-title">🌟 摳比開示 🌟</div>
+            <div id="fortuneText" class="fortune-text"></div>
+            <button onclick="closeFortune()" style="width:100%; background:var(--primary-blue); color:white; border:none; padding:12px; border-radius:15px; font-weight:bold;">收下好運 ✨</button>
         </div>
     </div>
 
@@ -62,63 +78,72 @@
 
     <script>
     const kobiFortunes = [
-    "財神爺今天住你家，別忘了幫祂準備下午茶！☕",
-    "錢錢沒有不見，它們只是去叫更多朋友過來找你。💰",
-    "今日宜：記帳。不宜：衝動購物。摳比在看著你喔！👀",
-    "你的錢包像磁鐵一樣，正在強力吸引百元大鈔。🧲",
-    "今日運勢大吉！穩紮穩打，財富滴水不漏。⛰️",
-    "對自己好一點，也是一種投資。今天適合買個小禮物鼓勵自己。🎁",
-    "摳比說：你的夢想很貴，所以你的每一筆省錢都在為它增添動力！🔥",
-    "今日財運關鍵字：米色。穿漂亮錢財自然跟上。✨",
-    "錢錢只是出遠門，記好帳，它們就知道回家的路了。🏠",
-    "大吉！今天適合開啟一個新的存錢計畫，摳比會陪著你。🐹",
-    "老闆今天心情好，你的辛苦他都有看在眼裡，加薪路不遠了！📈",
-    "學生黨好運：筆記做得好，獎學金跑不了。今日讀書運爆棚！📝",
-    "家庭主婦福音：今天去買菜可能會有驚喜小折扣，省下就是賺到。🛒",
-    "創業者靈感：今天隨手畫的草圖，可能就是下一個爆款商品！💡",
-    "你的存錢筒說它肚子餓了，快餵它吃一點點閃亮的銅板吧。🪙",
-    "今日不宜：猶豫不決。看準了就出手，好運不等人！⚡",
-    "喝杯水，深呼吸，你的財富正在這平靜的時刻慢慢累積。💧",
-    "摳比悄悄話：省下那杯拿鐵，你的夢想基金就又多了一塊磚。☕",
-    "今日小幸運：發票記得對，或許那一千萬的中獎人就是你！🎫",
-    "穿上最舒服的機能鞋，今天適合走更遠的路去遇見財富。👟",
-    "戶頭數字今天很害羞，但只要你持續記帳，它會慢慢長大的。🌱",
-    "今日最適合與人合作，一個人的力量有限，兩個人能摳到更多錢。手牽手吧！",
-    "別小看口袋裡的零錢，它們聚在一起能帶你去想去的地方。🌈",
-    "今日宜：斷捨離。清掉不需要的東西，好運才有位置住進來。🧹",
-    "你的才華就是最棒的資產，今天請自信地展現它！🌟",
-    "摳比預測：今天會有一筆意外的小收入，可能是很久以前借出的錢。💸",
-    "投資高手說：今天適合觀望，不動如山也是一種賺錢的方式。⛰️",
-    "學生黨加油：今天專心聽講，未來你的薪水會感謝現在的你。🎓",
-    "家庭主婦強項：你精準的預算控制，是全家人最安心的後盾。💖",
-    "創業家精神：失敗是成功的墊腳石，而記帳是成功的地圖。🗺️",
-    "今日色彩建議：綠色。讓你的財富像森林一樣茂盛生長。🌿",
-    "別人的眼光不重要，重要是你存錢的目標非常閃耀。💎",
-    "摳比提醒：早點睡覺，好夢裡可能有報明牌喔！🛌",
-    "今天適合去公園走走，免費的芬多精是最高級的享受。🌳",
-    "你的記帳習慣已經超越 90% 的人了，請繼續保持這份優秀！🏆",
-    "今日宜：自炊。親手做的便當，吃起來特別有「存錢」的味道。🍱",
-    "錢財就像愛人，你越細心呵護它，它就越離不開你。❤️",
-    "今日適合學習新技能，大腦增值，口袋自然也會跟著升值。📚",
-    "不要怕目標太遠，只要開始走，每一步都在縮短距離。🛤️",
-    "摳比送你一朵花，祝你今天的財富花開富貴，驚喜不斷。🌺",
-    "今日關鍵字：耐心。好的投資需要時間發酵，別急著收割。⏳",
-    "你的夢想清單正在發光，那是因為你每天的努力都在為它充電。🔋",
-    "今天適合微笑，畢竟伸手不打笑臉人，財神爺也不例外。😁",
-    "學生黨祕笈：幫室友買個東西，說不定會被回請大餐喔。🍔",
-    "家庭主婦智慧：二手的東西不代表不好，惜物就是最大的福氣。♻️",
-    "創業家韌性：即便今天很累，看一眼存錢進度條，動力就回來了！🚀",
-    "今日不宜：聽信小道消息。相信自己的分析與摳比的紀錄。🛡️",
-    "摳比說：你值得擁有美好的生活，而這一切都從學會管錢開始。🥂",
-    "今日財運小叮嚀：記得檢查包裹，說不定裡面有送贈品。📦",
-    "這是大吉籤：不管世界怎麼變，摳比永遠在手機裡支持你！🐹❤️"
-];
-
+        "財神爺今天住你家，別忘了幫祂準備下午茶！☕\n🌈 幸運色：暖陽黃",
+        "錢錢沒有不見，它們只是去叫更多朋友過來找你。💰\n🌈 幸運色：薄荷綠",
+        "今日宜記帳，不宜衝動購物。摳比在看著你喔！👀\n🌈 幸運色：深海藍",
+        "錢包像磁鐵一樣，正在強力吸引大鈔進帳。🧲\n🌈 幸運色：閃耀金",
+        "運勢大吉！穩紮穩打，財富就會滴水不漏。⛰️\n🌈 幸運色：大地棕",
+        "對自己好也是一種投資，適合買個小禮物鼓勵自己。🎁\n🌈 幸運色：乾燥玫瑰粉",
+        "夢想很貴，每一筆省錢都在為它增添動力！🔥\n🌈 幸運色：火焰橘",
+        "今日財運爆棚，穿漂亮一點，錢財自然跟上。✨\n🌈 幸運色：優雅正米色",
+        "錢錢只是出遠門，記好帳，它們就知道回家的路。🏠\n🌈 幸運色：純淨白",
+        "大吉！適合開啟新計畫，摳比會陪著你。🐹\n🌈 幸運色：天空藍",
+        "你的辛苦都有價值，加薪與好運就在不遠處！📈\n🌈 幸運色：薰衣草紫",
+        "今日宜斷捨離，清掉舊物，好運才有位置住進來。🧹\n🌈 幸運色：迷霧灰",
+        "存錢筒說它肚子餓了，快餵它吃一點閃亮的銅板。🪙\n🌈 幸運色：古銅色",
+        "今日不宜猶豫不決，看準了就出手，好運不等人！⚡\n🌈 幸運色：亮眼紅",
+        "喝杯水深呼吸，財富正在平靜時刻慢慢累積。💧\n🌈 幸運色：透亮藍",
+        "省下那杯拿鐵，夢想基金就又多了一塊磚。☕\n🌈 幸運色：咖啡棕",
+        "發票記得對，或許那一千萬中獎人就是你！🎫\n🌈 幸運色：幸運綠",
+        "穿上機能鞋走更遠的路，去遇見全新的財富。👟\n🌈 幸運色：極致黑",
+        "戶頭數字很害羞，但只要持續記帳，它會慢慢長大。🌱\n🌈 幸運色：嫩芽綠",
+        "今日適合與人合作，兩個人能摳到更多錢。🤝\n🌈 幸運色：和諧靛藍",
+        "別小看零錢，聚在一起能帶你去想去的地方。🌈\n🌈 幸運色：彩虹色",
+        "你的才華就是最棒資產，今天請自信展現它！🌟\n🌈 幸運色：檸檬黃",
+        "會有一筆意外小收入，可能是很久以前借出的錢。💸\n🌈 幸運色：淺草綠",
+        "今天適合觀望，不動如山也是一種賺錢的方式。⛰️\n🌈 幸運色：墨岩綠",
+        "專心投入手邊的事，未來的你會感謝現在的努力。🎓\n🌈 幸運色：孔雀藍",
+        "精準的預算控制，是你最安心的財富後盾。💖\n🌈 幸運色：蜜桃粉",
+        "記帳就是成功的地圖，一步步走向你的夢想。🗺️\n🌈 幸運色：象牙白",
+        "讓財富像森林一樣茂盛生長，今天適合接觸大自然。🌿\n🌈 幸運色：森林綠",
+        "別人的眼光不重要，重要是你存錢目標很閃耀。💎\n🌈 幸運色：鑽石銀",
+        "早點睡覺，好夢裡可能有致富的小暗示喔！🛌\n🌈 幸運色：午夜藍",
+        "去公園走走吧，免費的芬多精是最高級的享受。🌳\n🌈 幸運色：橄欖綠",
+        "你的記帳習慣超越 90% 的人了，請繼續保持！🏆\n🌈 幸運色：琥珀橙",
+        "今日宜自炊，親手做的便當有「存錢」的味道。🍱\n🌈 幸運色：肉桂棕",
+        "錢財就像愛人，你越細心呵護它就越離不開你。❤️\n🌈 幸運色：寶石紅",
+        "適合學習新技能，大腦增值，口袋也會升值。📚\n🌈 幸運色：知性青",
+        "不怕目標遠，只要開始走，每一步都在縮短距離。🛤️\n🌈 幸運色：柏油灰",
+        "送你一朵花，祝你財富花開富貴，驚喜不斷。🌺\n🌈 幸運色：櫻花粉",
+        "好的投資需要時間發酵，請給財富多一點耐心。⏳\n🌈 幸運色：焦糖色",
+        "夢想清單正在發光，因為你每天都在為它充電。🔋\n🌈 幸運色：螢光綠",
+        "今日適合微笑，財神爺最喜歡靠近愛笑的人。😁\n🌈 幸運色：亮橘色",
+        "給予也是一種獲得，小小分享會換來大大好運。🎈\n🌈 幸運色：糖果藍",
+        "惜物就是最大的福氣，省下的錢會變成喜歡的樣子。♻️\n🌈 幸運色：湖水綠",
+        "累的時候看一眼進度條，夢想的動力就回來了！🚀\n🌈 幸運色：星空銀",
+        "相信自己的分析與紀錄，不盲從就是最好的投資。🛡️\n🌈 幸運色：鋼鐵灰",
+        "你值得美好生活，這一切從學會管錢開始。🥂\n🌈 幸運色：香檳金",
+        "記得檢查包裹，說不定裡面藏著意外驚喜。📦\n🌈 幸運色：原木色",
+        "不管世界怎麼變，摳比永遠在手機裡支持你！🐹\n🌈 幸運色：摳比藍",
+        "今日宜閱讀，文字的力量會帶給你新的商機。📖\n🌈 幸運色：經典黑",
+        "好運就像公車，錯過這班，下一班會載你去更遠的地方。🚌\n🌈 幸運色：亮黃色",
+        "你是最棒的，今天的你比昨天更懂如何創造財富。🥇\n🌈 幸運色：榮耀金"
+    ];
 
     function showKobiFortune() {
         const randomIndex = Math.floor(Math.random() * kobiFortunes.length);
-        alert("🌟 摳比今日財運開示 🌟\n\n" + kobiFortunes[randomIndex]);
+        document.getElementById('fortuneTitle').innerText = "🌟 摳比今日財運開示 🌟";
+        document.getElementById('fortuneText').innerText = kobiFortunes[randomIndex];
+        document.getElementById('fortuneModal').style.display = 'flex';
     }
+
+    function showKobiDream() {
+        document.getElementById('fortuneTitle').innerText = "☁️ 夢想摳摳摳 ☁️";
+        document.getElementById('fortuneText').innerText = "一步一步慢慢來，摳比會陪你存到目標金額的！加油！💪";
+        document.getElementById('fortuneModal').style.display = 'flex';
+    }
+
+    function closeFortune() { document.getElementById('fortuneModal').style.display = 'none'; }
 
     async function initLiff() {
         try {
@@ -128,18 +153,11 @@
             } else {
                 const profile = await liff.getProfile();
                 document.getElementById('totalBalanceText').innerText = `${profile.displayName} 的摳比餘額`;
-                
-                // 檢查 URL 參數
                 const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('draw') === '1') {
-                    showKobiFortune();
-                } else if (urlParams.get('dream') === '1') {
-                    alert("☁️ 夢想摳摳摳 ☁️\n\n一步一步慢慢來，摳比會陪你存到目標金額的！加油！");
-                }
+                if (urlParams.get('draw') === '1') showKobiFortune();
+                else if (urlParams.get('dream') === '1') showKobiDream();
             }
-        } catch (error) {
-            console.error("LIFF 初始化失敗", error);
-        }
+        } catch (error) { console.error("LIFF 失敗", error); }
         updateUI();
     }
 
@@ -174,25 +192,22 @@
 
     function confirmEntry() {
         const amount = parseInt(document.getElementById('modalAmount').value);
-        const category = document.getElementById('categorySelect').value;
-        const note = document.getElementById('modalNote').value;
         if (amount > 0) {
-            const newRecord = {
+            kobiRecords.unshift({
                 id: Date.now(), 
                 type: currentType,
-                category: category,
+                category: document.getElementById('categorySelect').value,
                 amount: amount,
-                note: note || "",
+                note: document.getElementById('modalNote').value || "",
                 date: new Date().toLocaleDateString()
-            };
-            kobiRecords.unshift(newRecord); 
+            }); 
             saveAndUpdate();
             closeModal();
         }
     }
 
     function deleteRecord(id) {
-        if (confirm("確定要刪除這筆紀錄嗎？")) {
+        if (confirm("確定要刪除嗎？")) {
             kobiRecords = kobiRecords.filter(r => r.id !== id);
             saveAndUpdate();
         }
@@ -204,10 +219,9 @@
     }
 
     function updateUI() {
-        let totalSave = 0;
-        let totalSpend = 0;
-        const historyListObj = document.getElementById('historyList');
-        historyListObj.innerHTML = '<div style="font-weight:bold; margin-bottom:5px;">最近紀錄</div>';
+        let totalSave = 0, totalSpend = 0;
+        const list = document.getElementById('historyList');
+        list.innerHTML = '<div style="font-weight:bold; margin-bottom:5px;">最近紀錄</div>';
 
         kobiRecords.forEach(r => {
             if(r.type === 'save') totalSave += r.amount;
@@ -215,16 +229,11 @@
             const item = document.createElement('div');
             item.className = 'history-item';
             item.innerHTML = `
-                <span style="flex:1">
-                    <b class="item-${r.type}">${r.category}</b> 
-                    <small style="color:#999; margin-left:5px;">${r.note}</small>
-                </span>
-                <span class="item-${r.type}" style="margin-right:10px;">
-                    ${r.type === 'save' ? '+' : '-'}${r.amount}
-                </span>
-                <span onclick="deleteRecord(${r.id})" style="cursor:pointer; color:#ccc; font-size:18px;">✕</span>
+                <span style="flex:1"><b class="item-${r.type}">${r.category}</b> <small style="color:#999;">${r.note}</small></span>
+                <span class="item-${r.type}" style="margin-right:10px;">${r.type==='save'?'+':'-'}${r.amount}</span>
+                <span onclick="deleteRecord(${r.id})" style="cursor:pointer; color:#ccc;">✕</span>
             `;
-            historyListObj.appendChild(item);
+            list.appendChild(item);
         });
         document.getElementById('totalBalance').innerText = `$${totalSave - totalSpend}`;
         renderChart(totalSave, totalSpend);
@@ -232,8 +241,7 @@
 
     let myChart;
     function renderChart(s, p) {
-        const canvas = document.getElementById('myChart');
-        const ctx = canvas.getContext('2d');
+        const ctx = document.getElementById('myChart').getContext('2d');
         if (myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'doughnut',
