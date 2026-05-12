@@ -7,118 +7,43 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg-color: #FAF9F6; /* 奶油白 */
-            --primary-blue: #A2D2FF; /* 粉藍 */
-            --line-brown: #9E7E6B; /* 淺咖線條 */
-            --text-color: #6D5B4F;
+            --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F;
         }
+        body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
+        
+        .kobi-container { width: 160px; height: 160px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 10px 0; box-shadow: 0 8px 0px var(--primary-blue); overflow: hidden; }
+        .kobi-container img { width: 80%; height: auto; }
 
-        body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0;
-            padding: 20px;
-        }
+        .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 90%; max-width: 350px; margin-bottom: 15px; }
+        .balance-amount { font-size: 28px; font-weight: bold; color: var(--primary-blue); }
 
-        /* 摳比大頭容器 */
-        .kobi-container {
-            width: 200px;
-            height: 200px;
-            background: #fff;
-            border: 4px solid var(--line-brown);
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin: 20px 0;
-            box-shadow: 0 10px 0px var(--primary-blue);
-            overflow: hidden;
-        }
-
-        .kobi-container img {
-            width: 80%;
-            height: auto;
-        }
-
-        .balance-card {
-            background: white;
-            padding: 20px;
-            border-radius: 20px;
-            border: 2px solid var(--line-brown);
-            text-align: center;
-            width: 90%;
-            max-width: 350px;
-            margin-bottom: 20px;
-        }
-
-        .balance-amount {
-            font-size: 32px;
-            font-weight: bold;
-            color: var(--primary-blue);
-        }
-
-        .btn-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            width: 90%;
-            max-width: 350px;
-        }
-
-        button {
-            padding: 15px;
-            border-radius: 15px;
-            border: 2px solid var(--line-brown);
-            font-size: 18px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
+        .btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 90%; max-width: 350px; }
+        button { padding: 12px; border-radius: 12px; border: 2px solid var(--line-brown); font-size: 16px; font-weight: bold; cursor: pointer; }
         .btn-save { background-color: var(--primary-blue); color: white; }
         .btn-spend { background-color: white; color: var(--line-brown); }
 
-        canvas {
-            margin-top: 30px;
-            max-width: 300px;
-        }
+        /* 對話框樣式 */
+        #customModal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px; border-radius: 25px; border: 3px solid var(--line-brown); width: 85%; max-width: 320px; text-align: center; }
+        select, input { width: 100%; padding: 10px; margin-bottom: 10px; border-radius: 10px; border: 2px solid #ddd; box-sizing: border-box; font-size: 16px; }
 
-        /* 自定義對話框樣式 */
-        #customModal {
-            display: none; 
-            position: fixed; 
-            top: 0; left: 0; 
-            width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.5); 
-            z-index: 1000; 
-            justify-content: center; 
-            align-items: center;
-        }
-        .modal-content {
-            background: white; 
-            padding: 30px; 
-            border-radius: 25px; 
-            border: 3px solid var(--line-brown); 
-            width: 80%; 
-            max-width: 300px; 
-            text-align: center; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
+        /* 紀錄清單樣式 */
+        .history-list { width: 90%; max-width: 350px; margin-top: 20px; background: white; border-radius: 15px; padding: 10px; border: 1px solid #eee; }
+        .history-item { display: flex; justify-content: space-between; padding: 8px; border-bottom: 1px solid #f9f9f9; font-size: 14px; }
+        .item-save { color: #5dade2; } .item-spend { color: #9E7E6B; }
     </style>
 </head>
 <body>
 
     <div id="customModal">
         <div class="modal-content">
-            <h3 id="modalTitle">今天要餵多少錢？</h3>
-            <input type="number" id="modalInput" style="width:100%; padding:12px; font-size:20px; border-radius:10px; border:2px solid var(--primary-blue); margin-bottom:20px; outline:none; box-sizing: border-box;" placeholder="請輸入金額">
+            <h3 id="modalTitle">記帳囉</h3>
+            <select id="categorySelect"></select>
+            <input type="number" id="modalAmount" placeholder="金額">
+            <input type="text" id="modalNote" placeholder="備註（選填）">
             <div style="display:flex; gap:10px;">
-                <button onclick="closeModal()" style="flex:1; background:#eee; border:none; padding:10px; border-radius:10px; cursor:pointer; font-size:16px;">取消</button>
-                <button onclick="confirmMoney()" style="flex:1; background:var(--primary-blue); color:white; border:none; padding:10px; border-radius:10px; font-weight:bold; cursor:pointer; font-size:16px;">確定</button>
+                <button onclick="closeModal()" style="flex:1;">取消</button>
+                <button onclick="confirmEntry()" style="flex:1; background:var(--primary-blue); color:white;">確定</button>
             </div>
         </div>
     </div>
@@ -128,79 +53,108 @@
     </div>
 
     <div class="balance-card">
-        <div>目前摳比幫你存了</div>
+        <div id="totalBalanceText">目前摳比餘額</div>
         <div class="balance-amount" id="totalBalance">$0</div>
     </div>
 
     <div class="btn-group">
-        <button class="btn-save" onclick="updateMoney('save')">存摳摳</button>
-        <button class="btn-spend" onclick="updateMoney('spend')">花摳摳</button>
+        <button class="btn-save" onclick="openModal('save')">收入</button>
+        <button class="btn-spend" onclick="openModal('spend')">支出</button>
     </div>
 
     <canvas id="myChart"></canvas>
 
+    <div class="history-list" id="historyList">
+        <div style="font-weight:bold; margin-bottom:5px;">最近紀錄</div>
+    </div>
+
     <script>
-        // 資料初始化
-        let data = JSON.parse(localStorage.getItem('kobiData')) || { save: 0, spend: 0 };
-        let currentAction = '';
+        // 初始化自定義類別
+        let categories = {
+            save: ["薪水", "投資高手", "發獎金啦", "其他"],
+            spend: ["吃喝費", "治裝費", "交通費", "網路手機費用", "玩耍費用", "金融保險費", "學習上進費", "醫療費用", "其他"]
+        };
 
-        function updateUI() {
-            document.getElementById('totalBalance').innerText = `$${data.save - data.spend}`;
-            renderChart();
-            localStorage.setItem('kobiData', JSON.stringify(data));
+        // 資料結構：儲存每一筆明細
+        let kobiRecords = JSON.parse(localStorage.getItem('kobiRecords')) || [];
+        let currentType = '';
+
+        function openModal(type) {
+            currentType = type;
+            document.getElementById('modalTitle').innerText = (type === 'save' ? "增加收入" : "支出項目");
+            
+            // 渲染類別選單
+            const select = document.getElementById('categorySelect');
+            select.innerHTML = categories[type].map(cat => `<option value="${cat}">${cat}</option>`).join('');
+            
+            document.getElementById('modalAmount').value = '';
+            document.getElementById('modalNote').value = '';
+            document.getElementById('customModal').style.display = 'flex';
         }
 
-        // 呼叫自定義對話框
-        function updateMoney(type) {
-            currentAction = type;
-            document.getElementById('modalTitle').innerText = (type === 'save' ? "今天要餵摳比多少錢？" : "摳比幫你搬走了多少錢？");
-            document.getElementById('modalInput').value = ''; 
-            document.getElementById('customModal').style.display = 'flex'; 
-            document.getElementById('modalInput').focus();
-        }
+        function closeModal() { document.getElementById('customModal').style.display = 'none'; }
 
-        function closeModal() {
-            document.getElementById('customModal').style.display = 'none';
-        }
+        function confirmEntry() {
+            const amount = parseInt(document.getElementById('modalAmount').value);
+            const category = document.getElementById('categorySelect').value;
+            const note = document.getElementById('modalNote').value;
 
-        function confirmMoney() {
-            let amount = document.getElementById('modalInput').value;
-            if (amount && !isNaN(amount)) {
-                data[currentAction] += parseInt(amount);
-                updateUI();
+            if (amount > 0) {
+                const newRecord = {
+                    type: currentType,
+                    category: category,
+                    amount: amount,
+                    note: note,
+                    date: new Date().toLocaleDateString()
+                };
+                kobiRecords.unshift(newRecord); // 新的在前面
+                if(kobiRecords.length > 20) kobiRecords.pop(); // 只留最近20筆
+                saveAndUpdate();
                 closeModal();
             }
         }
 
-        // 圓餅圖渲染
+        function saveAndUpdate() {
+            localStorage.setItem('kobiRecords', JSON.stringify(kobiRecords));
+            updateUI();
+        }
+
+        function updateUI() {
+            let totalSave = 0;
+            let totalSpend = 0;
+            const historyHtml = ['<div style="font-weight:bold; margin-bottom:5px;">最近紀錄</div>'];
+
+            kobiRecords.forEach(r => {
+                if(r.type === 'save') totalSave += r.amount;
+                else totalSpend += r.amount;
+                
+                historyHtml.push(`
+                    <div class="history-item">
+                        <span><b class="item-${r.type}">${r.category}</b> <small>${r.note}</small></span>
+                        <span class="item-${r.type}">${r.type === 'save' ? '+' : '-'}${r.amount}</span>
+                    </div>
+                `);
+            });
+
+            document.getElementById('totalBalance').innerText = `$${totalSave - totalSpend}`;
+            document.getElementById('historyList').innerHTML = historyHtml.join('');
+            renderChart(totalSave, totalSpend);
+        }
+
         let myChart;
-        function renderChart() {
+        function renderChart(s, p) {
             const ctx = document.getElementById('myChart').getContext('2d');
             if (myChart) myChart.destroy();
             myChart = new Chart(ctx, {
                 type: 'doughnut',
                 data: {
-                    labels: ['存起來', '花掉的'],
-                    datasets: [{
-                        data: [data.save, data.spend],
-                        backgroundColor: ['#A2D2FF', '#9E7E6B'],
-                        borderWidth: 0
-                    }]
+                    labels: ['收入', '支出'],
+                    datasets: [{ data: [s, p], backgroundColor: ['#A2D2FF', '#9E7E6B'], borderWidth: 0 }]
                 },
-                options: { 
-                    cutout: '70%',
-                    plugins: {
-                        legend: {
-                            labels: {
-                                font: { weight: 'bold' }
-                            }
-                        }
-                    }
-                }
+                options: { cutout: '75%' }
             });
         }
 
-        // 啟動網頁
         updateUI();
     </script>
 </body>
