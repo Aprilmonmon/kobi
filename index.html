@@ -69,6 +69,18 @@
     </div>
 
     <script>
+        // 在讀取資料時多加一層保護
+function loadData() {
+    try {
+        let saved = localStorage.getItem('kobiRecords');
+        if (!saved) return [];
+        return JSON.parse(saved);
+    } catch (e) {
+        // 如果解析失敗（代表程式碼更新後格式亂了），報警但不刪除
+        console.error("資料格式有誤，啟動修復程序");
+        return []; 
+    }
+}
         // 初始化自定義類別
         let categories = {
             save: ["薪水", "投資高手", "發獎金啦", "其他"],
