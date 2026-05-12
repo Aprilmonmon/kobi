@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>摳比 KOBI - 你的夢想存錢小管家</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-color: #FAF9F6; /* 奶油白 */
+            --primary-blue: #A2D2FF; /* 粉藍 */
+            --line-brown: #9E7E6B; /* 淺咖線條 */
+            --text-color: #6D5B4F;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        /* 摳比大頭容器 */
+        .kobi-container {
+            width: 200px;
+            height: 200px;
+            background: #fff;
+            border: 4px solid var(--line-brown);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 20px 0;
+            box-shadow: 0 10px 0px var(--primary-blue);
+            overflow: hidden;
+        }
+
+        .kobi-container img {
+            width: 80%;
+            height: auto;
+        }
+
+        .balance-card {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px solid var(--line-brown);
+            text-align: center;
+            width: 90%;
+            max-width: 350px;
+            margin-bottom: 20px;
+        }
+
+        .balance-amount {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-blue);
+        }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            width: 90%;
+            max-width: 350px;
+        }
+
+        button {
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid var(--line-brown);
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .btn-save { background-color: var(--primary-blue); color: white; }
+        .btn-spend { background-color: white; color: var(--line-brown); }
+
+        canvas {
+            margin-top: 30px;
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="kobi-container">
+        <img src="https://i.imgur.com/your-kobi-image.png" alt="KOBI">
+    </div>
+
+    <div class="balance-card">
+        <div>目前摳比幫你存了</div>
+        <div class="balance-amount" id="totalBalance">$0</div>
+    </div>
+
+    <div class="btn-group">
+        <button class="btn-save" onclick="updateMoney('save')">存摳摳</button>
+        <button class="btn-spend" onclick="updateMoney('spend')">花摳摳</button>
+    </div>
+
+    <canvas id="myChart"></canvas>
+
+    <script>
+        // 資料初始化：從手機本地儲存讀取
+        let data = JSON.parse(localStorage.getItem('kobiData')) || { save: 0, spend: 0 };
+
+        function updateUI() {
+            document.getElementById('totalBalance').innerText = `$${data.save - data.spend}`;
+            renderChart();
+            localStorage.setItem('kobiData', JSON.stringify(data));
+        }
+
+        function updateMoney(type) {
+            let amount = prompt(type === 'save' ? "今天要餵摳比多少錢？" : "摳比幫你搬走多少錢？");
+            if (amount && !isNaN(amount)) {
+                data[type] += parseInt(amount);
+                updateUI();
+            }
+        }
+
+        // 圓餅圖渲染
+        let myChart;
+        function renderChart() {
+            const ctx = document.getElementById('myChart').getContext('2d');
+            if (myChart) myChart.destroy();
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['存起來', '花掉的'],
+                    datasets: [{
+                        data: [data.save, data.spend],
+                        backgroundColor: ['#A2D2FF', '#9E7E6B'],
+                        borderWidth: 0
+                    }]
+                },
+                options: { cutout: '70%' }
+            });
+        }
+
+        updateUI();
+    </script>
+</body>
+</html>
