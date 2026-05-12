@@ -69,106 +69,130 @@
     </div>
 
     <script>
-        // 在讀取資料時多加一層保護
-function loadData() {
-    try {
-        let saved = localStorage.getItem('kobiRecords');
-        if (!saved) return [];
-        return JSON.parse(saved);
-    } catch (e) {
-        // 如果解析失敗（代表程式碼更新後格式亂了），報警但不刪除
-        console.error("資料格式有誤，啟動修復程序");
-        return []; 
+<script>
+    // 1. 保險讀取機制：確保資料格式錯誤時不會崩潰
+    function loadData() {
+        try {
+            let saved = localStorage.getItem('kobiRecords');
+            if (!saved) return [];
+            let records = JSON.parse(saved);
+            
+            // 自動修補：確保舊資料也有 ID 才能刪除
+            let needsFix = false;
+            records = records.map(r => {
+                if (!r.id) { r.id = Date.now() + Math.random(); needsFix = true; }
+                return r;
+            });
+            if (needsFix) localStorage.setItem('kobiRecords', JSON.stringify(records));
+            
+            return records;
+        } catch (e) {
+            console.error("資料格式有誤，啟動修復程序");
+            return []; 
+        }
     }
-}
-        // 初始化自定義類別
-        let categories = {
-            save: ["薪水", "投資高手", "發獎金啦", "其他"],
-            spend: ["吃喝費", "治裝費", "交通費", "網路手機費用", "玩耍費用", "金融保險費", "學習上進費", "醫療費用", "其他"]
-        };
 
-        // 資料結構：儲存每一筆明細
-        let kobiRecords = JSON.parse(localStorage.getItem('kobiRecords')) || [];
-        let currentType = '';
+    // 初始化分類與資料 (正確呼叫 loadData)
+    let categories = {
+        save: ["薪水", "投資高手", "發獎金啦", "其他"],
+        spend: ["吃喝費", "治裝費", "交通費", "網路手機費用", "玩耍費用", "金融保險費", "學習上進費", "醫療費用", "其他"]
+    };
 
-        function openModal(type) {
-            currentType = type;
-            document.getElementById('modalTitle').innerText = (type === 'save' ? "增加收入" : "支出項目");
-            
-            // 渲染類別選單
-            const select = document.getElementById('categorySelect');
-            select.innerHTML = categories[type].map(cat => `<option value="${cat}">${cat}</option>`).join('');
-            
-            document.getElementById('modalAmount').value = '';
-            document.getElementById('modalNote').value = '';
-            document.getElementById('customModal').style.display = 'flex';
+    let kobiRecords = loadData(); // ✅ 修正這裡：改用保險函數讀取
+    let currentType = '';
+
+    function openModal(type) {
+        currentType = type;
+        document.getElementById('modalTitle').innerText = (type === 'save' ? "增加收入" : "支出項目");
+        const select = document.getElementById('categorySelect');
+        select.innerHTML = categories[type].map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        document.getElementById('modalAmount').value = '';
+        document.getElementById('modalNote').value = '';
+        document.getElementById('customModal').style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('customModal').style.display = 'none'; }
+
+    function confirmEntry() {
+        const amount = parseInt(document.getElementById('modalAmount').value);
+        const category = document.getElementById('categorySelect').value;
+        const note = document.getElementById('modalNote').value;
+
+        if (amount > 0) {
+            const newRecord = {
+                id: Date.now(), 
+                type: currentType,
+                category: category,
+                amount: amount,
+                note: note || "",
+                date: new Date().toLocaleDateString()
+            };
+            kobiRecords.unshift(newRecord); 
+            if(kobiRecords.length > 50) kobiRecords.pop(); // 建議增加到50筆
+            saveAndUpdate();
+            closeModal();
         }
+    }
 
-        function closeModal() { document.getElementById('customModal').style.display = 'none'; }
-
-        function confirmEntry() {
-            const amount = parseInt(document.getElementById('modalAmount').value);
-            const category = document.getElementById('categorySelect').value;
-            const note = document.getElementById('modalNote').value;
-
-            if (amount > 0) {
-                const newRecord = {
-                    id: Date.now(), //
-                    type: currentType,
-                    category: category,
-                    amount: amount,
-                    note: note,
-                    date: new Date().toLocaleDateString()
-                };
-                kobiRecords.unshift(newRecord); // 新的在前面
-                if(kobiRecords.length > 20) kobiRecords.pop(); // 只留最近20筆
-                saveAndUpdate();
-                closeModal();
-            }
+    // ✅ 新增：刪除功能的邏輯
+    function deleteRecord(id) {
+        if (confirm("確定要刪除這筆紀錄嗎？")) {
+            kobiRecords = kobiRecords.filter(r => r.id !== id);
+            saveAndUpdate();
         }
+    }
 
-        function saveAndUpdate() {
-            localStorage.setItem('kobiRecords', JSON.stringify(kobiRecords));
-            updateUI();
-        }
-
-        function updateUI() {
-            let totalSave = 0;
-            let totalSpend = 0;
-            const historyHtml = ['<div style="font-weight:bold; margin-bottom:5px;">最近紀錄</div>'];
-
-            kobiRecords.forEach(r => {
-                if(r.type === 'save') totalSave += r.amount;
-                else totalSpend += r.amount;
-                
-                historyHtml.push(`
-                    <div class="history-item">
-                        <span><b class="item-${r.type}">${r.category}</b> <small>${r.note}</small></span>
-                        <span class="item-${r.type}">${r.type === 'save' ? '+' : '-'}${r.amount}</span>
-                    </div>
-                `);
-            });
-
-            document.getElementById('totalBalance').innerText = `$${totalSave - totalSpend}`;
-            document.getElementById('historyList').innerHTML = historyHtml.join('');
-            renderChart(totalSave, totalSpend);
-        }
-
-        let myChart;
-        function renderChart(s, p) {
-            const ctx = document.getElementById('myChart').getContext('2d');
-            if (myChart) myChart.destroy();
-            myChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['收入', '支出'],
-                    datasets: [{ data: [s, p], backgroundColor: ['#A2D2FF', '#9E7E6B'], borderWidth: 0 }]
-                },
-                options: { cutout: '75%' }
-            });
-        }
-
+    function saveAndUpdate() {
+        localStorage.setItem('kobiRecords', JSON.stringify(kobiRecords));
         updateUI();
-    </script>
+    }
+
+    function updateUI() {
+        let totalSave = 0;
+        let totalSpend = 0;
+        const historyListObj = document.getElementById('historyList');
+        historyListObj.innerHTML = '<div style="font-weight:bold; margin-bottom:5px;">最近紀錄</div>';
+
+        kobiRecords.forEach(r => {
+            if(r.type === 'save') totalSave += r.amount;
+            else totalSpend += r.amount;
+            
+            // ✅ 修正這裡：加上 ✕ 刪除按鈕
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            item.style.alignItems = 'center';
+            item.innerHTML = `
+                <span style="flex:1">
+                    <b class="item-${r.type}">${r.category}</b> 
+                    <small style="color:#999; margin-left:5px;">${r.note}</small>
+                </span>
+                <span class="item-${r.type}" style="margin-right:10px;">
+                    ${r.type === 'save' ? '+' : '-'}${r.amount}
+                </span>
+                <span onclick="deleteRecord(${r.id})" style="cursor:pointer; color:#ccc; font-size:18px;">✕</span>
+            `;
+            historyListObj.appendChild(item);
+        });
+
+        document.getElementById('totalBalance').innerText = `$${totalSave - totalSpend}`;
+        renderChart(totalSave, totalSpend);
+    }
+
+    let myChart;
+    function renderChart(s, p) {
+        const ctx = document.getElementById('myChart').getContext('2d');
+        if (myChart) myChart.destroy();
+        myChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['收入', '支出'],
+                datasets: [{ data: [s, p], backgroundColor: ['#A2D2FF', '#9E7E6B'], borderWidth: 0 }]
+            },
+            options: { cutout: '75%' }
+        });
+    }
+
+    updateUI();
+</script>
 </body>
 </html>
