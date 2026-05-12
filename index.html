@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
+    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>摳比 KOBI - 你的夢想存錢小管家</title>
@@ -69,14 +70,31 @@
     </div>
 
     <script>
-    // 1. 保險讀取機制：確保資料格式錯誤時不會崩潰
+    // 1. LIFF 初始化與登入
+    async function initLiff() {
+        try {
+            await liff.init({ liffId: "2010068096-vsSIzIqA" });
+            if (!liff.isLoggedIn()) {
+                liff.login();
+            } else {
+                const profile = await liff.getProfile();
+                console.log("歡迎！", profile.displayName);
+                document.getElementById('totalBalanceText').innerText = `${profile.displayName} 的摳比餘額`;
+            }
+        } catch (error) {
+            console.error("LIFF 初始化失敗", error);
+        }
+        // 無論 LIFF 是否成功，最後都要刷新介面顯示資料
+        updateUI();
+    }
+
+    // 2. 保險讀取機制
     function loadData() {
         try {
             let saved = localStorage.getItem('kobiRecords');
             if (!saved) return [];
             let records = JSON.parse(saved);
             
-            // 自動修補：確保舊資料也有 ID 才能刪除
             let needsFix = false;
             records = records.map(r => {
                 if (!r.id) { r.id = Date.now() + Math.random(); needsFix = true; }
@@ -86,19 +104,24 @@
             
             return records;
         } catch (e) {
-            console.error("資料格式有誤，啟動修復程序");
+            console.error("資料格式有誤");
             return []; 
         }
     }
 
-    // 初始化分類與資料 (正確呼叫 loadData)
+    // 3. 初始化全域變數
     let categories = {
         save: ["薪水", "投資高手", "發獎金啦", "其他"],
         spend: ["吃喝費", "治裝費", "交通費", "網路手機費用", "玩耍費用", "金融保險費", "學習上進費", "醫療費用", "其他"]
     };
 
-    let kobiRecords = loadData(); // ✅ 修正這裡：改用保險函數讀取
+    let kobiRecords = loadData();
     let currentType = '';
+
+    // 4. 網頁開啟時啟動 initLiff
+    initLiff();
+
+    // --- 以下是功能函數 (與你原本的一樣) ---
 
     function openModal(type) {
         currentType = type;
@@ -127,13 +150,12 @@
                 date: new Date().toLocaleDateString()
             };
             kobiRecords.unshift(newRecord); 
-            if(kobiRecords.length > 50) kobiRecords.pop(); // 建議增加到50筆
+            if(kobiRecords.length > 50) kobiRecords.pop();
             saveAndUpdate();
             closeModal();
         }
     }
 
-    // ✅ 新增：刪除功能的邏輯
     function deleteRecord(id) {
         if (confirm("確定要刪除這筆紀錄嗎？")) {
             kobiRecords = kobiRecords.filter(r => r.id !== id);
@@ -150,13 +172,14 @@
         let totalSave = 0;
         let totalSpend = 0;
         const historyListObj = document.getElementById('historyList');
+        if (!historyListObj) return; // 防呆
+        
         historyListObj.innerHTML = '<div style="font-weight:bold; margin-bottom:5px;">最近紀錄</div>';
 
         kobiRecords.forEach(r => {
             if(r.type === 'save') totalSave += r.amount;
             else totalSpend += r.amount;
             
-            // ✅ 修正這裡：加上 ✕ 刪除按鈕
             const item = document.createElement('div');
             item.className = 'history-item';
             item.style.alignItems = 'center';
@@ -179,7 +202,9 @@
 
     let myChart;
     function renderChart(s, p) {
-        const ctx = document.getElementById('myChart').getContext('2d');
+        const canvas = document.getElementById('myChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
         if (myChart) myChart.destroy();
         myChart = new Chart(ctx, {
             type: 'doughnut',
@@ -190,8 +215,6 @@
             options: { cutout: '75%' }
         });
     }
-
-    updateUI();
 </script>
 </body>
 </html>
