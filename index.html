@@ -71,7 +71,6 @@
 
 
 
-
     <div id="dreamPage" class="page">
         <div class="balance-card" style="background: var(--primary-blue); color: white; border:none;">
             <div style="font-size:14px; opacity:0.8;">目前累積夢想基金</div>
@@ -81,12 +80,27 @@
             <b style="font-size:18px;">☁️ 我的夢想清單</b>
             <button onclick="openModal('dreamModal')" style="background:var(--line-brown); color:white; border:none; padding:8px 12px; border-radius:10px; font-size:12px;">+ 新目標</button>
         </div>
+        
         <div id="dreamContainer" style="width:100%;"></div>
+
         <hr style="width:100%; border:0.5px solid #eee; margin: 25px 0;">
+        
+        <!-- 📦 時光寶盒 -->
+        <div style="width:100%; margin-bottom: 20px;">
+            <b style="font-size:18px;">📦 摳比的時光寶盒</b>
+            <div id="achievedContainer" style="width:100%; margin-top:10px; display: flex; flex-wrap: wrap; gap: 8px;">
+                <!-- 已實現的夢想會自動顯示在這裡 -->
+            </div>
+        </div>
+
+        <hr style="width:100%; border:0.5px solid #eee; margin: 25px 0;">
+
         <b style="width:100%; text-align:left; margin-bottom:10px;">🐹 摳比福利社推薦</b>
         <div id="recommendContainer" style="width:100%; border: 1px dashed #ccc; padding: 20px; border-radius: 15px; color:#ccc; text-align:center;">
             清單準備中...
         </div>
+    </div> <!-- 確保 dreamPage 在這裡正確結束 -->
+
     </div>
 
     <div id="settleModal" class="modal"><div class="modal-content">
