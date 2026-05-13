@@ -245,6 +245,17 @@
             updateUI();
             openModal('fortuneModal');
         }
+        function deleteDream(event, index) {
+    // 阻止事件冒泡，避免點擊叉叉時也觸發了「解鎖夢想」
+    event.stopPropagation();
+    
+    if (confirm(`🐹 摳比問你：確定要取消【${dreams[index].name}】這個夢想嗎？`)) {
+        dreams.splice(index, 1);
+        localStorage.setItem('kobiDreams', JSON.stringify(dreams));
+        updateUI(); // 重新整理畫面
+    }
+}
+
 
         function addDream() {
             const name = document.getElementById('dreamName').value;
