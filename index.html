@@ -247,13 +247,14 @@
         }
 
         function deleteDream(event, index) {
-            event.stopPropagation();
-            if (confirm(`🐹 摳比問你：確定要取消【${dreams[index].name}】這個夢想嗎？`)) {
-                dreams.splice(index, 1);
-                localStorage.setItem('kobiDreams', JSON.stringify(dreams));
-                updateUI();
-            }
-        }
+    event.stopPropagation();
+    if (confirm(`🐹 摳比問你：確定要取消【${dreams[index].name}】這個夢想嗎？`)) {
+        dreams.splice(index, 1);
+        localStorage.setItem('kobiDreams', JSON.stringify(dreams));
+        updateUI(); // 移到確認刪除之後執行
+    }
+}
+
 
         function addDream() {
             const name = document.getElementById('dreamName').value;
