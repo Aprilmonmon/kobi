@@ -61,15 +61,15 @@
             <b style="color:#FFB7B2;">GO ></b>
         </div>
 
-<!-- 原本的按鈕 -->
-<button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆紀錄</button>
+        <!-- 原本的按鈕 -->
+        <button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆紀錄</button>
 
-<!-- 新增這行提示文字 -->
-<div style="font-size: 11px; color: #ccc; text-align: center; margin-top: 8px;">💡 溫馨提示：點擊下方紀錄項目即可刪除資料</div>
+        <div style="font-size: 11px; color: #ccc; text-align: center; margin-top: 8px;">💡 溫馨提示：點擊下方紀錄項目即可刪除資料</div>
+        
+        <div id="listItems" style="width:100%; margin-top:20px;"></div>
+    </div> <!-- 這是 recordPage 的結尾，約在第 78 行 -->
 
-    </div>
-    <!-- 在提示文字 div 標籤結束後補上這行 -->
-<div id="listItems" style="width:100%; margin-top:20px;"></div>
+
 
 
     <div id="dreamPage" class="page">
@@ -166,13 +166,31 @@
 
 function deleteRecord(id) {
     deleteId = id;
-    // 不使用系統 confirm，直接改用今日開示那個漂亮的視窗來問
     document.getElementById('fortuneText').innerText = "🐹 摳比問你：確定要刪除這筆紀錄嗎？";
     const modalBtn = document.querySelector('#fortuneModal .btn-main');
     modalBtn.innerText = "確定刪除";
-    modalBtn.onclick = executeDelete; // 點擊後執行真正的刪除
+    modalBtn.onclick = executeDelete;
+
+    // --- 增加這段：在按鈕下面多加一個取消連結 ---
+    let cancelBtn = document.getElementById('cancelDeleteBtn');
+    if (!cancelBtn) {
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = 'cancelDeleteBtn';
+        cancelBtn.innerText = "先不要";
+        cancelBtn.style = "background:none; border:none; color:#999; margin-top:10px; cursor:pointer; width:100%;";
+        cancelBtn.onclick = () => {
+            // 點取消也要恢復按鈕文字
+            modalBtn.innerText = "好喔！";
+            modalBtn.onclick = () => closeModal('fortuneModal');
+            closeModal('fortuneModal');
+        };
+        modalBtn.parentNode.appendChild(cancelBtn);
+    } else {
+        cancelBtn.style.display = 'block'; // 如果已經存在就顯示
+    }
     openModal('fortuneModal');
 }
+
 
 function executeDelete() {
     records = records.filter(r => r.id !== deleteId);
@@ -253,17 +271,32 @@ function executeDelete() {
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         window.onload = () => {
-            const params = new URLSearchParams(window.location.search);
-            // 優先處理跳轉
-            if (params.get('dream') === '1') {
-                switchPage('dreamPage');
-            } else if (params.get('draw') === '1') {
-                switchPage('recordPage');
-                setTimeout(showFortune, 500);
-            } else {
-                updateUI();
+    // 點擊彈窗外部（黑色陰影）可關閉
+    window.onclick = function(event) {
+        if (event.target.classList.contains('modal')) {
+            const modalId = event.target.id;
+            // 如果點的是刪除彈窗的背景，關閉時要恢復按鈕狀態
+            if (modalId === 'fortuneModal') {
+                const modalBtn = document.querySelector('#fortuneModal .btn-main');
+                modalBtn.innerText = "好喔！";
+                modalBtn.onclick = () => closeModal('fortuneModal');
+                if(document.getElementById('cancelDeleteBtn')) document.getElementById('cancelDeleteBtn').style.display = 'none';
             }
-            liff.init({ liffId: "2010068096-vsSIzIqA" }).catch(e => console.log(e));
+            closeModal(modalId);
+        }
+    };
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('dream') === '1') {
+        switchPage('dreamPage');
+    } else if (params.get('draw') === '1') {
+        switchPage('recordPage');
+        setTimeout(showFortune, 500);
+    } else {
+        updateUI();
+    }
+    liff.init({ liffId: "2010068096-vsSIzIqA" }).catch(e => console.log(e));
+
         };
     </script>
 </body>
