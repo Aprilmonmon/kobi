@@ -8,99 +8,114 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; }
-        body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .tab-group { display: flex; width: 100%; background: white; border-bottom: 2px solid var(--line-brown); position: sticky; top: 0; z-index: 100; }
-        .tab-btn { flex: 1; padding: 15px; text-align: center; font-weight: bold; cursor: pointer; border: none; background: none; color: #ccc; }
+        body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
+        
+        /* 頁籤導覽列 */
+        .tab-group { display: flex; width: 100%; background: white; border-bottom: 2px solid var(--line-brown); position: sticky; top: 0; z-index: 1000; }
+        .tab-btn { flex: 1; padding: 18px 10px; text-align: center; font-weight: bold; cursor: pointer; border: none; background: none; color: #ccc; font-size: 16px; transition: 0.3s; }
         .tab-btn.active { color: var(--line-brown); border-bottom: 4px solid var(--line-brown); }
+
+        /* 頁面容器 */
         .page { display: none; width: 90%; max-width: 350px; padding: 20px 0; flex-direction: column; align-items: center; }
-        .page.active { display: flex; }
-        .kobi-container { width: 120px; height: 120px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; }
-        .kobi-container img { width: 80%; }
-        .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; margin-bottom: 15px; }
-        .balance-amount { font-size: 28px; font-weight: bold; color: var(--primary-blue); }
+        .page.active { display: flex !important; }
+
+        /* 樞比頭像與餘額 */
+        .kobi-container { width: 130px; height: 130px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .kobi-container img { width: 85%; }
+        .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; margin-bottom: 20px; box-sizing: border-box; }
+        .balance-amount { font-size: 32px; font-weight: bold; color: var(--primary-blue); }
+        
+        /* 夢想卡片設計 */
         .dream-card { background: white; border-radius: 15px; padding: 15px; width: 100%; border: 1px solid #ddd; margin-bottom: 12px; box-sizing: border-box; }
-        .progress-bar { background: #eee; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; }
-        .progress-fill { background: var(--primary-blue); height: 100%; transition: 0.5s; width: 0%; }
-        .reward-link { display: none; color: white; background: var(--primary-blue); font-size: 13px; font-weight: bold; text-decoration: none; margin-top: 10px; padding: 10px; border-radius: 8px; text-align: center; border: none; width: 100%; cursor: pointer; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 20px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; }
-        input, select { width: 90%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; }
-        .btn-main { width: 100%; padding: 12px; border-radius: 12px; border: none; background: var(--primary-blue); color: white; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .progress-bar { background: #eee; height: 14px; border-radius: 7px; margin: 12px 0; overflow: hidden; }
+        .progress-fill { background: var(--primary-blue); height: 100%; transition: 0.8s ease-in-out; width: 0%; }
+        .reward-link { display: none; color: white; background: var(--primary-blue); font-size: 14px; font-weight: bold; text-decoration: none; margin-top: 10px; padding: 12px; border-radius: 10px; text-align: center; border: none; width: 100%; cursor: pointer; box-shadow: 0 4px 0 #7fb8ed; }
+
+        /* 彈窗樣式 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; box-sizing: border-box; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 12px; border: 1px solid #ddd; font-size: 16px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 14px; border-radius: 14px; border: none; background: var(--primary-blue); color: white; font-weight: bold; margin-top: 10px; cursor: pointer; font-size: 16px; }
     </style>
 </head>
 <body>
 
+    <!-- 導覽切換 -->
     <div class="tab-group">
-        <div class="tab-btn active" onclick="switchPage('recordPage', this)">樞比記帳</div>
-        <div class="tab-btn" onclick="switchPage('dreamPage', this)">夢想福利社</div>
+        <div id="btn-record" class="tab-btn active" onclick="switchPage('recordPage', this)">樞比記帳</div>
+        <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage', this)">夢想福利社</div>
     </div>
 
+    <!-- 頁面一：記帳 -->
     <div id="recordPage" class="page active">
-        <div class="kobi-container" onclick="showFortune()">
+        <div class="kobi-container" id="kobiLogo" onclick="showFortune()">
             <img src="kobi-logo.png" alt="KOBI">
         </div>
         <div class="balance-card">
-            <div style="font-size:14px; color:#999;">目前可分配餘額</div>
+            <div style="font-size:14px; color:#999; margin-bottom: 5px;">目前可分配餘額</div>
             <div class="balance-amount" id="mainBalance">$0</div>
         </div>
         <div style="display: flex; gap: 10px; width: 100%;">
-            <button onclick="openRecordModal('save')" style="flex:1; padding:12px; background:var(--primary-blue); color:white; border-radius:12px; border:none; font-weight:bold;">收入</button>
-            <button onclick="openRecordModal('spend')" style="flex:1; padding:12px; background:white; border:2px solid var(--line-brown); border-radius:12px; font-weight:bold;">支出</button>
+            <button onclick="openRecordModal('save')" style="flex:1; padding:15px; background:var(--primary-blue); color:white; border-radius:15px; border:none; font-weight:bold; font-size:16px;">收入</button>
+            <button onclick="openRecordModal('spend')" style="flex:1; padding:15px; background:white; border:2px solid var(--line-brown); border-radius:15px; font-weight:bold; font-size:16px;">支出</button>
         </div>
-        <canvas id="myChart" style="margin-top:20px; max-height: 200px;"></canvas>
+        <canvas id="myChart" style="margin-top:25px; max-height: 180px;"></canvas>
     </div>
 
+    <!-- 頁面二：夢想牆 -->
     <div id="dreamPage" class="page">
         <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <b style="font-size:18px;">☁️ 夢想清單</b>
-            <button onclick="document.getElementById('dreamModal').style.display='flex'" style="background:var(--line-brown); color:white; border:none; padding:8px 12px; border-radius:8px; font-size:12px;">+ 新增目標</button>
+            <b style="font-size:20px;">☁️ 夢想清單</b>
+            <button onclick="document.getElementById('dreamModal').style.display='flex'" style="background:var(--line-brown); color:white; border:none; padding:8px 15px; border-radius:10px; font-size:13px; font-weight:bold;">+ 新增目標</button>
         </div>
         <div id="dreamContainer" style="width:100%;"></div>
-        <hr style="width:100%; border:0; border-top:1px solid #ddd; margin:20px 0;">
-        <b style="font-size:18px; width:100%; text-align:left;">🎁 犒賞福利社</b>
-        <div style="font-size:12px; color:#999; margin-bottom:10px; width:100%;">達標後即可解鎖專屬優惠！</div>
+        <hr style="width:100%; border:0; border-top:1px solid #eee; margin:25px 0;">
+        <b style="font-size:20px; width:100%; text-align:left;">🎁 犒賞福利社</b>
+        <div style="font-size:13px; color:#999; margin: 8px 0 15px; width:100%;">當進度 100% 時，專屬獎勵將會解鎖！</div>
         <div id="shopList" style="width:100%;">
-            <div class="dream-card" style="border-style: dashed; border-color: var(--primary-blue);">
-                <b>Gorpcore 機能登山鞋</b>
-                <div style="font-size:12px; color:#999; margin-top:5px;">解鎖門檻: $4,500</div>
+            <div class="dream-card" style="border-style: dashed; border-color: var(--primary-blue); border-width: 2px;">
+                <b style="font-size: 16px;">Gorpcore 機能登山鞋</b>
+                <div style="font-size:12px; color:#999; margin-top:6px;">解鎖門檻: $4,500</div>
                 <button id="reward-機能登山鞋" class="reward-link" onclick="window.open('https://www.merrell.com.tw/')">🎉 犒賞時間！前往領取福利</button>
             </div>
-            <div class="dream-card" style="border-style: dashed; border-color: var(--primary-blue);">
-                <b>正米色厚磅棉 Tee</b>
-                <div style="font-size:12px; color:#999; margin-top:5px;">解鎖門檻: $1,280</div>
-                <button id="reward-米色Tee" class="reward-link" onclick="window.open('https://shopee.tw/')">🎉 已達標！點我前往購買</button>
+            <div class="dream-card" style="border-style: dashed; border-color: var(--primary-blue); border-width: 2px;">
+                <b style="font-size: 16px;">雙北捷運一房一廳夢想宅</b>
+                <div style="font-size:12px; color:#999; margin-top:6px;">解鎖門檻: $12,800,000</div>
+                <button id="reward-夢想宅" class="reward-link" onclick="alert('太棒了！快與房仲預約看屋！')">🏠 恭喜達成！邁向成家之路</button>
             </div>
         </div>
     </div>
 
-    <!-- 彈窗區 -->
+    <!-- 彈窗集 -->
     <div id="recordModal" class="modal"><div class="modal-content">
-        <h3 id="modalTitle">新增紀錄</h3>
+        <h3 id="modalTitle" style="margin-top:0;">新增紀錄</h3>
         <select id="categorySelect">
-            <option value="生活開銷">生活開銷</option>
             <option value="創業收入">創業收入</option>
             <option value="股票獲利">股票獲利</option>
+            <option value="生活開銷">生活開銷</option>
+            <option value="其他">其他</option>
         </select>
-        <input type="number" id="amountInput" placeholder="輸入金額" inputmode="numeric">
-        <button class="btn-main" onclick="addRecord()">確認</button>
-        <button onclick="closeModal('recordModal')" style="width:100%; background:none; border:none; margin-top:10px; color:#999;">取消</button>
+        <input type="number" id="amountInput" placeholder="請輸入金額" inputmode="numeric">
+        <button class="btn-main" onclick="addRecord()">確認記錄</button>
+        <button onclick="closeModal('recordModal')" style="width:100%; background:none; border:none; margin-top:12px; color:#999; font-size:14px;">取消</button>
     </div></div>
 
     <div id="dreamModal" class="modal"><div class="modal-content">
-        <h3>設定夢想目標</h3>
+        <h3 style="margin-top:0;">設定夢想清單</h3>
         <input type="text" id="dreamName" placeholder="例如: 機能登山鞋">
-        <input type="number" id="dreamTarget" placeholder="目標金額">
-        <button class="btn-main" onclick="addDream()">開始存錢！</button>
-        <button onclick="closeModal('dreamModal')" style="width:100%; background:none; border:none; margin-top:10px; color:#999;">取消</button>
+        <input type="number" id="dreamTarget" placeholder="目標金額 (例如: 4500)">
+        <button class="btn-main" onclick="addDream()">開始累積夢想</button>
+        <button onclick="closeModal('dreamModal')" style="width:100%; background:none; border:none; margin-top:12px; color:#999; font-size:14px;">返回</button>
     </div></div>
 
     <div id="fortuneModal" class="modal"><div class="modal-content">
-        <div style="color:var(--primary-blue); font-weight:bold; margin-bottom:10px;">🌟 樞比今日開示 🌟</div>
-        <div id="fortuneText" style="line-height:1.6; margin-bottom:15px; white-space:pre-line; text-align: left; font-size: 14px;"></div>
-        <button onclick="closeModal('fortuneModal')" style="width:100%; background:var(--primary-blue); color:white; border:none; border-radius:15px; padding:12px; font-weight:bold;">收下好運</button>
+        <div style="color:var(--primary-blue); font-weight:bold; margin-bottom:10px; font-size:18px;">🐹 樞比今日開示 🐹</div>
+        <div id="fortuneText" style="line-height:1.7; margin:15px 0; white-space:pre-line; text-align: left; font-size: 15px; color: var(--text-color);"></div>
+        <button onclick="closeModal('fortuneModal')" style="width:100%; background:var(--primary-blue); color:white; border:none; border-radius:15px; padding:14px; font-weight:bold; font-size:16px;">收下這份好運</button>
     </div></div>
 
     <script>
+        // 50 則籤詩
         const kobiFortunes = [
             "財神爺今天住你家，別忘了幫祂準備下午茶！☕\n🌈 幸運色：暖陽黃",
             "今日財運爆棚，穿漂亮一點，錢財自然跟上。✨\n🌈 幸運色：優雅正米色",
@@ -163,8 +178,8 @@
             try {
                 await liff.init({ liffId: "2010068096-vsSIzIqA" });
                 if (!liff.isLoggedIn()) { liff.login(); }
-                updateBalance();
-            } catch (e) { console.log('LIFF Init Error', e); updateBalance(); }
+            } catch (e) { console.error('LIFF Init Error', e); }
+            updateUI();
         }
 
         function switchPage(pageId, btn) {
@@ -183,18 +198,18 @@
 
         function addRecord() {
             const amt = parseInt(document.getElementById('amountInput').value);
-            if(!amt) return;
+            if(!amt) return alert('請輸入金額！');
             records.push({ type: currentRecordType, amount: amt, date: new Date() });
             localStorage.setItem('kobiRecords', JSON.stringify(records));
             closeModal('recordModal');
             document.getElementById('amountInput').value = '';
-            updateBalance();
+            updateUI();
         }
 
         function addDream() {
             const name = document.getElementById('dreamName').value;
             const target = parseInt(document.getElementById('dreamTarget').value);
-            if(!name || !target) return;
+            if(!name || !target) return alert('請填寫完整資訊！');
             dreams.push({ name, target });
             localStorage.setItem('kobiDreams', JSON.stringify(dreams));
             closeModal('dreamModal');
@@ -203,15 +218,14 @@
             renderDreams();
         }
 
-        function updateBalance() {
+        function updateUI() {
             const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
             document.getElementById('mainBalance').innerText = `$${total.toLocaleString()}`;
             renderChart();
-            return total;
         }
 
         function renderDreams() {
-            const total = updateBalance();
+            const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
             const container = document.getElementById('dreamContainer');
             container.innerHTML = '';
             dreams.forEach(d => {
@@ -219,10 +233,10 @@
                 const isDone = percent >= 100;
                 container.innerHTML += `
                     <div class="dream-card">
-                        <b>${d.name}</b>
-                        <div style="font-size:18px; margin:5px 0;">$${d.target.toLocaleString()}</div>
+                        <b style="font-size: 16px;">${d.name}</b>
+                        <div style="font-size:20px; margin:8px 0; color:var(--line-brown); font-weight:bold;">$${d.target.toLocaleString()}</div>
                         <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-                        <div style="font-size:12px; color:#888;">${isDone ? '🎉 夢想達成！' : '還差 $' + (d.target - total).toLocaleString()}</div>
+                        <div style="font-size:13px; color:#888;">${isDone ? '🎉 已達到購買目標！' : '還差 $' + (d.target - total).toLocaleString() + ' ('+percent+'%)'}</div>
                     </div>
                 `;
                 const rewardBtn = document.getElementById('reward-' + d.name);
@@ -246,11 +260,12 @@
             chart = new Chart(ctx, {
                 type: 'doughnut',
                 data: { labels:['收入','支出'], datasets:[{data:[s||1, p], backgroundColor:['#A2D2FF','#9E7E6B'], borderWidth: 0}]},
-                options: { cutout: '80%', plugins: { legend: { display: false } } }
+                options: { cutout: '80%', plugins: { legend: { display: false } }, animation: { animateRotate: true } }
             });
         }
 
-        initLiff();
+        // 啟動
+        window.onload = initLiff;
     </script>
 </body>
 </html>
