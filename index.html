@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>摳比 KOBI - 夢想金庫</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; }
         body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
@@ -26,13 +25,16 @@
         .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 15px; position: relative; }
         .settle-guide { width: 100%; background: #FFF4E0; border: 1px dashed #FFB7B2; border-radius: 12px; padding: 10px; margin-bottom: 20px; font-size: 13px; color: #9E7E6B; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         
-        /* 通用元件 */
-        .history-item { background: white; padding: 10px 15px; border-radius: 12px; margin-bottom: 8px; width: 100%; box-sizing: border-box; border-left: 5px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
+        /* 歷史紀錄條目 - 增加點擊回饋感 */
+        .history-item { background: white; padding: 10px 15px; border-radius: 12px; margin-bottom: 8px; width: 100%; box-sizing: border-box; border-left: 5px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .history-item:active { transform: scale(0.98); background: #f9f9f9; }
+        
+        /* 夢想卡片與進度條 */
         .dream-card { background: white; border-radius: 15px; padding: 15px; width: 100%; border: 1px solid #ddd; margin-bottom: 12px; box-sizing: border-box; }
         .progress-bar { background: #eee; height: 14px; border-radius: 7px; margin: 12px 0; overflow: hidden; }
         .progress-fill { background: var(--primary-blue); height: 100%; width: 0%; transition: 0.8s; }
         
-        /* 彈窗 */
+        /* 彈窗樣式 */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; max-height: 85vh; overflow-y: auto; }
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
@@ -46,6 +48,7 @@
         <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想福利社</div>
     </div>
 
+    <!-- 記帳頁面 -->
     <div id="recordPage" class="page active">
         <div class="kobi-container" onclick="showFortune()">
             <img src="kobi-logo.png" alt="KOBI" style="width:85%;">
@@ -62,9 +65,14 @@
         </div>
 
         <button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆紀錄</button>
-        <div id="listItems" style="width:100%; margin-top:20px;"></div>
+        
+        <div style="width:100%; margin-top:20px;">
+            <b style="font-size:14px; color:var(--line-brown);">最近紀錄 (點擊可刪除)</b>
+            <div id="listItems" style="margin-top:10px;"></div>
+        </div>
     </div>
 
+    <!-- 夢想分頁 -->
     <div id="dreamPage" class="page">
         <div class="balance-card" style="background: var(--primary-blue); color: white; border:none;">
             <div style="font-size:14px; opacity:0.8;">目前累積夢想基金</div>
@@ -82,6 +90,7 @@
         </div>
     </div>
 
+    <!-- 結算彈窗 -->
     <div id="settleModal" class="modal"><div class="modal-content">
         <h3>📊 週/月結算中心</h3>
         <p style="font-size:13px; color:#666;">結算會將目前的帳目清空，並讓你決定要把多少剩餘的錢存進夢想基金。</p>
@@ -94,64 +103,63 @@
         <button onclick="closeModal('settleModal')" style="background:none; border:none; color:#999; margin-top:10px;">再等等</button>
     </div></div>
 
+    <!-- 記帳彈窗 -->
     <div id="recordModal" class="modal"><div class="modal-content">
         <h3>💰 新增紀錄</h3>
-        <input type="date" id="recordDate"><select id="recordType" onchange="updateCategories()"><option value="spend">支出 / 購買</option><option value="save">收入 / 存錢</option></select>
-        <select id="recordCategory"></select><input type="number" id="recordAmount" placeholder="金額"><textarea id="recordNote" placeholder="備注一下..." rows="2"></textarea>
-        <button onclick="addRecord()" class="btn-main">存入金庫</button><button onclick="closeModal('recordModal')" style="background:none; border:none; color:#999; margin-top:10px;">取消</button>
+        <input type="date" id="recordDate">
+        <select id="recordType" onchange="updateCategories()">
+            <option value="spend">支出 / 購買</option>
+            <option value="save">收入 / 存錢</option>
+        </select>
+        <select id="recordCategory"></select>
+        <input type="number" id="recordAmount" placeholder="金額">
+        <textarea id="recordNote" placeholder="備注一下..." rows="2"></textarea>
+        <button onclick="addRecord()" class="btn-main">存入金庫</button>
+        <button onclick="closeModal('recordModal')" style="background:none; border:none; color:#999; margin-top:10px;">取消</button>
     </div></div>
 
+    <!-- 夢想彈窗 -->
     <div id="dreamModal" class="modal"><div class="modal-content">
         <h3>✨ 設定新夢想</h3>
         <input type="text" id="dreamName" placeholder="夢想名稱"><input type="number" id="dreamTarget" placeholder="目標金額">
-        <button onclick="addDream()" class="btn-main">開始計畫</button><button onclick="closeModal('dreamModal')" style="background:none; border:none; color:#999; margin-top:10px;">取消</button>
+        <button onclick="addDream()" class="btn-main">開始計畫</button>
+        <button onclick="closeModal('dreamModal')" style="background:none; border:none; color:#999; margin-top:10px;">取消</button>
     </div></div>
 
-    <div id="fortuneModal" class="modal"><div class="modal-content"><div style="font-size:40px;">🐹</div><div style="color:var(--primary-blue); font-weight:bold;">摳比今日開示</div><div id="fortuneText" style="line-height:1.7; margin:15px 0; white-space:pre-line;"></div><button onclick="closeModal('fortuneModal')" class="btn-main">好喔！</button></div></div>
+    <!-- 運勢彈窗 -->
+    <div id="fortuneModal" class="modal"><div class="modal-content">
+        <div style="font-size:40px;">🐹</div>
+        <div style="color:var(--primary-blue); font-weight:bold;">摳比今日開示</div>
+        <div id="fortuneText" style="line-height:1.7; margin:15px 0; white-space:pre-line;"></div>
+        <button onclick="closeModal('fortuneModal')" class="btn-main">好喔！</button>
+    </div></div>
 
     <script>
-        // 50 則運勢預留 (同上版本)
-        const fortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃", "今日財運爆棚。✨\n🌈 幸運色：優雅正米色", "摳比永遠支持你！🐹\n🌈 幸運色：摳比藍", "省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠", "理財是為了自由。🕊️\n🌈 幸運色：純淨白", "夢想金庫長大中！📈\n🌈 幸運色：玫瑰金", "錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅", "控制物欲控制人生。🎮\n🌈 幸運色：經典黑", "你是省錢高手！👏\n🌈 幸運色：珊瑚橘", "記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅", "絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金", "小錢累積成大夢。🌊\n🌈 幸運色：天藍色", "好事即將發生。🌈\n🌈 幸運色：彩虹色", "今天會有意外小財。💰\n🌈 幸運色：檸檬黃"];
-
-        let records = JSON.parse(localStorage.getItem('kobiRecords') || '[]');
-        let dreams = JSON.parse(localStorage.getItem('kobiDreams') || '[]');
-        let dreamFund = parseFloat(localStorage.getItem('kobiDreamFund') || '0');
-
-        let categories = {
-            save: ["薪水", "獎金", "投資", "摳比紅包", "其他"],
-            spend: ["吃喝費", "治裝費", "交通費", "網路手機", "玩耍費", "金融保險", "學習成長", "醫療", "其他"]
-        };
-
-        // 徹底修復切換邏輯
-        function switchPage(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            
-            const activePage = document.getElementById(pageId);
-            const activeBtn = document.getElementById('btn-' + (pageId === 'recordPage' ? 'record' : 'dream'));
-            
-            if(activePage) activePage.classList.add('active');
-            if(activeBtn) activeBtn.classList.add('active');
-            
-            updateUI();
+        const fortunes = [
+    "財神爺今天住你家！☕\n🌈 幸運色：暖陽黃", "今日財運爆棚。✨\n🌈 幸運色：優雅正米色", "摳比永遠支持你！🐹\n🌈 幸運色：摳比藍", 
+    "省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠", "理財是為了自由。🕊️\n🌈 幸運色：純淨白", "夢想金庫長大中！📈\n🌈 幸運色：玫瑰金", 
+    "錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅", "控制物欲控制人生。🎮\n🌈 幸運色：經典黑", "你是省錢高手！👏\n🌈 幸運色：珊瑚橘", 
+    "記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅", "絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金", "今天適合斷捨離。🧹\n🌈 幸運色：象牙白", 
+    "驚喜就在不遠處。🎁\n🌈 幸運色：薄荷綠", "喝水健康又省錢。💧\n🌈 幸運色：透明藍", "小額存款也是投票。🗳️\n🌈 幸運色：芥末黃", 
+    "看準目標再出手。🦅\n🌈 幸運色：深咖啡", "你是理財小天才。🧠\n🌈 幸運色：薰衣草紫", "今日適合吃頓好的。🍛\n🌈 幸運色：暖橘色", 
+    "數字敏感點，運氣好點。💹\n🌈 幸運色：金屬銀", "存錢過程也可以甜。🍬\n🌈 幸運色：焦糖色", "財富像肌肉需要鍛鍊。🏋️\n🌈 幸運色：鋼鐵灰", 
+    "整理錢包讓錢舒服。👛\n🌈 幸運色：粉末藍", "方向對了早晚會到。🐢\n🌈 幸運色：軍綠色", "避開不必要支出。🧚\n🌈 幸運色：蜜桃粉", 
+    "習慣就像呼吸一樣自然。🌬️\n🌈 幸運色：淺米色", "保護你的價值。🛡️\n🌈 幸運色：古銅色", "買需要的非想要的。🦉\n🌈 幸運色：暗紫色", 
+    "投資健康最划算。🍏\n🌈 幸運色：草本綠", "讓錢流向正確處。🌊\n🌈 幸運色：海軍藍", "耐心換來資產。🕰️\n🌈 幸運色：酒紅色", 
+    "銅板能搬動大山。⛰️\n🌈 幸運色：石英粉", "努力就有回報。🎟️\n🌈 幸運色：亮點橘", "跟家人吃飯最溫暖。🍲\n🌈 幸運色：溫暖褐", 
+    "尊重每一分錢。🤝\n🌈 幸運色：炭灰色", "計畫下個旅行目標。✈️\n🌈 幸運色：蒂芙尼藍", "今天會有意外小財。💰\n🌈 幸運色：檸檬黃", 
+    "你的夢想正在發芽。🌱\n🌈 幸運色：嫩葉綠", "專注於你的目標。🎯\n🌈 幸運色：深藍色", "好事即將發生。🌈\n🌈 幸運色：彩虹色", 
+    "今天適合閱讀。📚\n🌈 幸運色：咖啡棕", "給自己一點獎勵。🍫\n🌈 幸運色：深可可", "保持心情愉悅最省錢。😊\n🌈 幸運色：亮粉色", 
+    "摳比幫你守住錢包。🐹\n🌈 幸運色：淺棕色", "智慧比金錢更重要。💡\n🌈 幸運色：螢光綠", "今天會遇到好人。🤝\n🌈 幸運色：珍珠白", 
+    "小錢累積成大夢。🌊\n🌈 幸運色：天藍色", "穩紮穩打才是王道。🧱\n🌈 幸運色：磚紅色", "夢想不會辜負你。⭐\n🌈 幸運色：閃耀金", 
+    "今天適合放空一下。☁️\n🌈 幸運色：雲朵灰", "你是最棒的。🥇\n🌈 幸運色：耀眼橘"];
         }
 
-        function updateCategories() {
-            const type = document.getElementById('recordType').value;
-            const catSelect = document.getElementById('recordCategory');
-            catSelect.innerHTML = categories[type].map(c => `<option value="${c}">${c}</option>`).join('');
-        }
-
-        function addRecord() {
-            const date = document.getElementById('recordDate').value;
-            const type = document.getElementById('recordType').value;
-            const category = document.getElementById('recordCategory').value;
-            const amount = parseFloat(document.getElementById('recordAmount').value);
-            const note = document.getElementById('recordNote').value;
-            if (date && amount) {
-                records.push({ id: Date.now(), date, type, category, amount, note });
+        // ✅ 修正：重新補回刪除功能與防呆
+        function deleteRecord(id) {
+            if (confirm("🐹 摳比問你：確定要刪除這筆紀錄嗎？")) {
+                records = records.filter(r => r.id !== id);
                 localStorage.setItem('kobiRecords', JSON.stringify(records));
-                closeModal('recordModal');
                 updateUI();
             }
         }
@@ -170,7 +178,7 @@
             records = []; 
             localStorage.setItem('kobiRecords', JSON.stringify(records));
             closeModal('settleModal');
-            alert(`結算完成！已將 $${transfer} 存入夢想基金。帳目已清空，開始新的週期吧！`);
+            alert(`結算完成！已將 $${transfer} 存入夢想基金。帳目已清空！`);
             updateUI();
         }
 
@@ -192,8 +200,19 @@
             
             const list = document.getElementById('listItems');
             list.innerHTML = records.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">本期尚無紀錄</div>';
-            records.slice(-5).reverse().forEach(r => {
-                list.innerHTML += `<div class="history-item" onclick="deleteRecord(${r.id})" style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'}"><div><b>${r.category}</b> <small>${r.date}</small><br><span style="font-size:12px; color:#999;">${r.note}</span></div><b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">${r.type==='save'?'+':'-'}${r.amount}</b></div>`;
+            
+            // ✅ 修正：確保生成的 HTML 有呼叫 deleteRecord
+            records.slice(-10).reverse().forEach(r => {
+                list.innerHTML += `
+                    <div class="history-item" onclick="deleteRecord(${r.id})" style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'}">
+                        <div>
+                            <b>${r.category}</b> <small>${r.date}</small><br>
+                            <span style="font-size:12px; color:#999;">${r.note || ''}</span>
+                        </div>
+                        <b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">
+                            ${r.type==='save' ? '+' : '-'}${r.amount.toLocaleString()}
+                        </b>
+                    </div>`;
             });
 
             const dc = document.getElementById('dreamContainer');
@@ -210,20 +229,17 @@
             document.getElementById('fortuneModal').style.display = 'flex';
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; if(id==='recordModal'){document.getElementById('recordDate').valueAsDate=new Date(); updateCategories();}}
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'flex'; 
+            if(id==='recordModal'){ document.getElementById('recordDate').valueAsDate=new Date(); updateCategories(); }
+        }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         window.onload = () => {
             const params = new URLSearchParams(window.location.search);
-            // 優先處理跳轉
-            if (params.get('dream') === '1') {
-                switchPage('dreamPage');
-            } else if (params.get('draw') === '1') {
-                switchPage('recordPage');
-                setTimeout(showFortune, 500);
-            } else {
-                updateUI();
-            }
+            if (params.get('dream') === '1') switchPage('dreamPage');
+            else if (params.get('draw') === '1') { switchPage('recordPage'); setTimeout(showFortune, 500); }
+            else updateUI();
             liff.init({ liffId: "2010068096-vsSIzIqA" }).catch(e => console.log(e));
         };
     </script>
