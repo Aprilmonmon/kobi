@@ -155,6 +155,14 @@
                 updateUI();
             }
         }
+        function deleteRecord(id) {
+        if (confirm("🐹 摳比問你：確定要刪除這筆紀錄嗎？")) {
+        records = records.filter(r => r.id !== id);
+        localStorage.setItem('kobiRecords', JSON.stringify(records));
+        updateUI();
+    }
+}
+
 
         function openSettleModal() {
             const currentTotal = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
@@ -192,9 +200,19 @@
             
             const list = document.getElementById('listItems');
             list.innerHTML = records.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">本期尚無紀錄</div>';
-            records.slice(-5).reverse().forEach(r => {
-                list.innerHTML += `<div class="history-item" onclick="deleteRecord(${r.id})" style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'}"><div><b>${r.category}</b> <small>${r.date}</small><br><span style="font-size:12px; color:#999;">${r.note}</span></div><b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">${r.type==='save'?'+':'-'}${r.amount}</b></div>`;
-            });
+            records.slice(-10).reverse().forEach(r => {
+    list.innerHTML += `
+        <div class="history-item" onclick="deleteRecord(${r.id})" style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'}; cursor:pointer;">
+            <div>
+                <b>${r.category}</b> <small>${r.date}</small><br>
+                <span style="font-size:12px; color:#999;">${r.note || ''}</span>
+            </div>
+            <b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">
+                ${r.type==='save' ? '+' : '-'}${r.amount.toLocaleString()}
+            </b>
+        </div>`;
+});
+
 
             const dc = document.getElementById('dreamContainer');
             dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
