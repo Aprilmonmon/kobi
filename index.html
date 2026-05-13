@@ -268,20 +268,22 @@
                 list.innerHTML += `<div class="history-item" onclick="deleteRecord(${r.id})" style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'}; cursor:pointer;"><div><b>${r.category}</b> <small>${r.date}</small><br><span style="font-size:12px; color:#999;">${r.note || ''}</span></div><b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">${r.type==='save' ? '+' : '-'}${r.amount.toLocaleString()}</b></div>`;
             });
 
-            const dc = document.getElementById('dreamContainer');
-            dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
-            dreams.forEach((d, index) => {
-                let percent = Math.min((dreamFund / d.target) * 100, 100).toFixed(1); 
-                dc.innerHTML += `<div class="dream-card" onclick="fulfillDream(${index})" style="cursor:pointer;"><b>${d.name}</b> ($${d.target.toLocaleString()})<div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div><div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}% (點擊解鎖)</div></div>`;
-            });
+            // 3. 渲染夢想清單
+const dc = document.getElementById('dreamContainer');
+dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
 
-            const ac = document.getElementById('achievedContainer');
-            ac.innerHTML = achievedDreams.length ? '' : '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
-            achievedDreams.forEach(ad => {
-                const displayAmount = ad.amount ? ` ($${ad.amount.toLocaleString()})` : '';
-                ac.innerHTML += `<div style="background:#eee; padding:6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd;">🏆 ${ad.name}${displayAmount}</div>`;
-            });
-        }
+dreams.forEach((d, index) => {
+    let percent = Math.min((dreamFund / d.target) * 100, 100).toFixed(1); 
+    dc.innerHTML += `
+        <div class="dream-card" onclick="fulfillDream(${index})" style="cursor:pointer; position:relative;">
+            <!-- 這是新增的刪除小叉叉 -->
+            <div onclick="deleteDream(event, ${index})" style="position:absolute; top:5px; right:12px; color:#ccc; font-size:20px; padding:5px; z-index:10;">&times;</div>
+            
+            <b>${d.name}</b> ($${d.target.toLocaleString()})
+            <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+            <div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}% (點擊解鎖)</div>
+        </div>`;
+});
 
         function showFortune() {
             const idx = Math.floor(Math.random() * fortunes.length);
