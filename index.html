@@ -61,15 +61,10 @@
             <b style="color:#FFB7B2;">GO ></b>
         </div>
 
-        <!-- 原本的按鈕 -->
         <button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆紀錄</button>
-
         <div style="font-size: 11px; color: #ccc; text-align: center; margin-top: 8px;">💡 溫馨提示：點擊下方紀錄項目即可刪除資料</div>
-        
         <div id="listItems" style="width:100%; margin-top:20px;"></div>
-    </div> <!-- 這是 recordPage 的結尾，約在第 78 行 -->
-
-
+    </div>
 
     <div id="dreamPage" class="page">
         <div class="balance-card" style="background: var(--primary-blue); color: white; border:none;">
@@ -82,27 +77,21 @@
         </div>
         
         <div id="dreamContainer" style="width:100%;"></div>
-
         <hr style="width:100%; border:0.5px solid #eee; margin: 25px 0;">
         
-        <!-- 📦 時光寶盒 -->
         <div style="width:100%; margin-bottom: 20px;">
             <b style="font-size:18px;">📦 摳比的時光寶盒</b>
-            <div id="achievedContainer" style="width:100%; margin-top:10px; display: flex; flex-wrap: wrap; gap: 8px;">
-                <!-- 已實現的夢想會自動顯示在這裡 -->
-            </div>
+            <div id="achievedContainer" style="width:100%; margin-top:10px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
         </div>
 
         <hr style="width:100%; border:0.5px solid #eee; margin: 25px 0;">
-
         <b style="width:100%; text-align:left; margin-bottom:10px;">🐹 摳比福利社推薦</b>
         <div id="recommendContainer" style="width:100%; border: 1px dashed #ccc; padding: 20px; border-radius: 15px; color:#ccc; text-align:center;">
             清單準備中...
         </div>
-    </div> <!-- 確保 dreamPage 在這裡正確結束 -->
-
     </div>
 
+    <!-- Modals -->
     <div id="settleModal" class="modal"><div class="modal-content">
         <h3>📊 週/月結算中心</h3>
         <p style="font-size:13px; color:#666;">結算會將目前的帳目清空，並讓你決定要把多少剩餘的錢存進夢想基金。</p>
@@ -131,31 +120,25 @@
     <div id="fortuneModal" class="modal"><div class="modal-content"><div style="font-size:40px;">🐹</div><div style="color:var(--primary-blue); font-weight:bold;">摳比今日開示</div><div id="fortuneText" style="line-height:1.7; margin:15px 0; white-space:pre-line;"></div><button onclick="closeModal('fortuneModal')" class="btn-main">好喔！</button></div></div>
 
     <script>
-        // 50 則運勢預留 (同上版本)
         const fortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃", "今日財運爆棚。✨\n🌈 幸運色：優雅正米色", "摳比永遠支持你！🐹\n🌈 幸運色：摳比藍", "省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠", "理財是為了自由。🕊️\n🌈 幸運色：純淨白", "夢想金庫長大中！📈\n🌈 幸運色：玫瑰金", "錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅", "控制物欲控制人生。🎮\n🌈 幸運色：經典黑", "你是省錢高手！👏\n🌈 幸運色：珊瑚橘", "記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅", "絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金", "小錢累積成大夢。🌊\n🌈 幸運色：天藍色", "好事即將發生。🌈\n🌈 幸運色：彩虹色", "今天會有意外小財。💰\n🌈 幸運色：檸檬黃"];
 
         let records = JSON.parse(localStorage.getItem('kobiRecords') || '[]');
         let dreams = JSON.parse(localStorage.getItem('kobiDreams') || '[]');
         let dreamFund = parseFloat(localStorage.getItem('kobiDreamFund') || '0');
-let achievedDreams = JSON.parse(localStorage.getItem('kobiAchieved') || '[]'); // 補上這一行
-
+        let achievedDreams = JSON.parse(localStorage.getItem('kobiAchieved') || '[]');
 
         let categories = {
             save: ["薪水", "獎金", "投資", "摳比紅包", "其他"],
             spend: ["吃喝費", "治裝費", "交通費", "網路手機", "玩耍費", "金融保險", "學習成長", "醫療", "其他"]
         };
 
-        // 徹底修復切換邏輯
         function switchPage(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            
             const activePage = document.getElementById(pageId);
             const activeBtn = document.getElementById('btn-' + (pageId === 'recordPage' ? 'record' : 'dream'));
-            
             if(activePage) activePage.classList.add('active');
             if(activeBtn) activeBtn.classList.add('active');
-            
             updateUI();
         }
 
@@ -178,46 +161,42 @@ let achievedDreams = JSON.parse(localStorage.getItem('kobiAchieved') || '[]'); /
                 updateUI();
             }
         }
-        let deleteId = null; // 先在外面設一個變數記住要刪哪一筆
 
-function deleteRecord(id) {
-    deleteId = id;
-    document.getElementById('fortuneText').innerText = "🐹 摳比問你：確定要刪除這筆紀錄嗎？";
-    const modalBtn = document.querySelector('#fortuneModal .btn-main');
-    modalBtn.innerText = "確定刪除";
-    modalBtn.onclick = executeDelete;
+        let deleteId = null;
+        function deleteRecord(id) {
+            deleteId = id;
+            document.getElementById('fortuneText').innerText = "🐹 摳比問你：確定要刪除這筆紀錄嗎？";
+            const modalBtn = document.querySelector('#fortuneModal .btn-main');
+            modalBtn.innerText = "確定刪除";
+            modalBtn.onclick = executeDelete;
 
-    // --- 增加這段：在按鈕下面多加一個取消連結 ---
-    let cancelBtn = document.getElementById('cancelDeleteBtn');
-    if (!cancelBtn) {
-        cancelBtn = document.createElement('button');
-        cancelBtn.id = 'cancelDeleteBtn';
-        cancelBtn.innerText = "先不要";
-        cancelBtn.style = "background:none; border:none; color:#999; margin-top:10px; cursor:pointer; width:100%;";
-        cancelBtn.onclick = () => {
-            // 點取消也要恢復按鈕文字
+            let cancelBtn = document.getElementById('cancelDeleteBtn');
+            if (!cancelBtn) {
+                cancelBtn = document.createElement('button');
+                cancelBtn.id = 'cancelDeleteBtn';
+                cancelBtn.innerText = "先不要";
+                cancelBtn.style = "background:none; border:none; color:#999; margin-top:10px; cursor:pointer; width:100%;";
+                cancelBtn.onclick = () => {
+                    modalBtn.innerText = "好喔！";
+                    modalBtn.onclick = () => closeModal('fortuneModal');
+                    closeModal('fortuneModal');
+                };
+                modalBtn.parentNode.appendChild(cancelBtn);
+            } else {
+                cancelBtn.style.display = 'block';
+            }
+            openModal('fortuneModal');
+        }
+
+        function executeDelete() {
+            records = records.filter(r => r.id !== deleteId);
+            localStorage.setItem('kobiRecords', JSON.stringify(records));
+            closeModal('fortuneModal');
+            const modalBtn = document.querySelector('#fortuneModal .btn-main');
             modalBtn.innerText = "好喔！";
             modalBtn.onclick = () => closeModal('fortuneModal');
-            closeModal('fortuneModal');
-        };
-        modalBtn.parentNode.appendChild(cancelBtn);
-    } else {
-        cancelBtn.style.display = 'block'; // 如果已經存在就顯示
-    }
-    openModal('fortuneModal');
-}
-
-
-function executeDelete() {
-    records = records.filter(r => r.id !== deleteId);
-    localStorage.setItem('kobiRecords', JSON.stringify(records));
-    closeModal('fortuneModal');
-    // 把按鈕文字恢復原狀，避免下次打開「今日開示」變刪除
-    document.querySelector('#fortuneModal .btn-main').innerText = "好喔！";
-    document.querySelector('#fortuneModal .btn-main').onclick = () => closeModal('fortuneModal');
-    updateUI();
-}
-
+            updateUI();
+        }
 
         function openSettleModal() {
             const currentTotal = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
@@ -233,54 +212,39 @@ function executeDelete() {
             records = []; 
             localStorage.setItem('kobiRecords', JSON.stringify(records));
             closeModal('settleModal');
-         // 先更新數據與畫面
-updateUI();
-
-// 用摳比的彈窗來顯示成功訊息
-const successMsg = `🎉 結算成功！\n摳比已幫你將 $${transfer.toLocaleString()} \n存入夢想金庫囉！\n新的週期也要加油喔！🐹`;
-document.getElementById('fortuneText').innerText = successMsg;
-
-// 確保按鈕文字是可愛的
-const modalBtn = document.querySelector('#fortuneModal .btn-main');
-modalBtn.innerText = "收到！(๑•̀ㅂ•́)و";
-modalBtn.onclick = () => closeModal('fortuneModal');
-
-// 隱藏可能存在的刪除取消按鈕
-if(document.getElementById('cancelDeleteBtn')) {
-    document.getElementById('cancelDeleteBtn').style.display = 'none';
-}
-
-openModal('fortuneModal');
-
+            updateUI();
+            const successMsg = `🎉 結算成功！\n摳比已幫你將 $${transfer.toLocaleString()} \n存入夢想金庫囉！\n新的週期也要加油喔！🐹`;
+            document.getElementById('fortuneText').innerText = successMsg;
+            const modalBtn = document.querySelector('#fortuneModal .btn-main');
+            modalBtn.innerText = "收到！(๑•̀ㅂ•́)و";
+            modalBtn.onclick = () => closeModal('fortuneModal');
+            if(document.getElementById('cancelDeleteBtn')) document.getElementById('cancelDeleteBtn').style.display = 'none';
+            openModal('fortuneModal');
         }
+
         function fulfillDream(index) {
-    const target = dreams[index];
-    if (dreamFund < target.target) {
-        document.getElementById('fortuneText').innerText = "🐹 摳比提醒：\n基金還不夠實現這個夢想喔！\n再加油存一點點！";
-        const modalBtn = document.querySelector('#fortuneModal .btn-main');
-        modalBtn.innerText = "好喔！";
-        modalBtn.onclick = () => closeModal('fortuneModal');
-        openModal('fortuneModal');
-        return;
-    }
-    
-    dreamFund -= target.target;
-    achievedDreams.push({ name: target.name, date: new Date().toLocaleDateString() });
-    dreams.splice(index, 1);
-
-    localStorage.setItem('kobiDreamFund', dreamFund);
-    localStorage.setItem('kobiDreams', JSON.stringify(dreams));
-    localStorage.setItem('kobiAchieved', JSON.stringify(achievedDreams));
-    
-    document.getElementById('fortuneText').innerText = `✨ 夢想實現！ ✨\n\n【${target.name}】\n已成功解鎖並存入時光寶盒！\n摳比為你感到驕傲！🐹`;
-    const modalBtn = document.querySelector('#fortuneModal .btn-main');
-    modalBtn.innerText = "太棒了！";
-    modalBtn.onclick = () => closeModal('fortuneModal');
-    
-    updateUI();
-    openModal('fortuneModal');
-}
-
+            const target = dreams[index];
+            if (dreamFund < target.target) {
+                document.getElementById('fortuneText').innerText = "🐹 摳比提醒：\n基金還不夠實現這個夢想喔！\n再加油存一點點！";
+                const modalBtn = document.querySelector('#fortuneModal .btn-main');
+                modalBtn.innerText = "好喔！";
+                modalBtn.onclick = () => closeModal('fortuneModal');
+                openModal('fortuneModal');
+                return;
+            }
+            dreamFund -= target.target;
+            achievedDreams.push({ name: target.name, amount: target.target, date: new Date().toLocaleDateString() });
+            dreams.splice(index, 1);
+            localStorage.setItem('kobiDreamFund', dreamFund);
+            localStorage.setItem('kobiDreams', JSON.stringify(dreams));
+            localStorage.setItem('kobiAchieved', JSON.stringify(achievedDreams));
+            document.getElementById('fortuneText').innerText = `✨ 夢想實現！ ✨\n\n【${target.name}】\n已成功解鎖並存入時光寶盒！\n摳比為你感到驕傲！🐹`;
+            const modalBtn = document.querySelector('#fortuneModal .btn-main');
+            modalBtn.innerText = "太棒了！";
+            modalBtn.onclick = () => closeModal('fortuneModal');
+            updateUI();
+            openModal('fortuneModal');
+        }
 
         function addDream() {
             const name = document.getElementById('dreamName').value;
@@ -293,92 +257,63 @@ openModal('fortuneModal');
             }
         }
 
-                function updateUI() {
-            // 1. 計算並顯示餘額
+        function updateUI() {
             const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
             document.getElementById('mainBalance').innerText = `$${total.toLocaleString()}`;
             document.getElementById('dreamFundTotal').innerText = `$${dreamFund.toLocaleString()}`;
             
-            // 2. 渲染記帳紀錄清單
             const list = document.getElementById('listItems');
             list.innerHTML = records.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">本期尚無紀錄</div>';
             records.slice(-10).reverse().forEach(r => {
-                list.innerHTML += `
-                    <div class="history-item" onclick="deleteRecord(${r.id})" style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'}; cursor:pointer;">
-                        <div>
-                            <b>${r.category}</b> <small>${r.date}</small><br>
-                            <span style="font-size:12px; color:#999;">${r.note || ''}</span>
-                        </div>
-                        <b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">
-                            ${r.type==='save' ? '+' : '-'}${r.amount.toLocaleString()}
-                        </b>
-                    </div>`;
+                list.innerHTML += `<div class="history-item" onclick="deleteRecord(${r.id})" style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'}; cursor:pointer;"><div><b>${r.category}</b> <small>${r.date}</small><br><span style="font-size:12px; color:#999;">${r.note || ''}</span></div><b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">${r.type==='save' ? '+' : '-'}${r.amount.toLocaleString()}</b></div>`;
             });
 
-           // 3. 渲染夢想清單 (保留這一段，並加入 onclick)
-const dc = document.getElementById('dreamContainer');
-dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
-dreams.forEach((d, index) => {
-    let rawPercent = (dreamFund / d.target) * 100;
-    const percent = Math.min(rawPercent, 100).toFixed(1); 
-    dc.innerHTML += `
-        <div class="dream-card" onclick="fulfillDream(${index})" style="cursor:pointer;">
-            <b>${d.name}</b> ($${d.target.toLocaleString()})
-            <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-            <div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}% (點擊解鎖)</div>
-        </div>`;
-});
-// 4. 渲染時光寶盒（已達成的夢想）
-const ac = document.getElementById('achievedContainer');
-ac.innerHTML = achievedDreams.length ? '' : '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
-achievedDreams.forEach(ad => {
-    // 這裡原本只有名字，我們把金額也顯示出來
-    ac.innerHTML += `<div style="background:#eee; padding:6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd;">🏆 ${ad.name}</div>`;
-});
+            const dc = document.getElementById('dreamContainer');
+            dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
+            dreams.forEach((d, index) => {
+                let percent = Math.min((dreamFund / d.target) * 100, 100).toFixed(1); 
+                dc.innerHTML += `<div class="dream-card" onclick="fulfillDream(${index})" style="cursor:pointer;"><b>${d.name}</b> ($${d.target.toLocaleString()})<div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div><div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}% (點擊解鎖)</div></div>`;
+            });
 
-
-            
+            const ac = document.getElementById('achievedContainer');
+            ac.innerHTML = achievedDreams.length ? '' : '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
+            achievedDreams.forEach(ad => {
+                const displayAmount = ad.amount ? ` ($${ad.amount.toLocaleString()})` : '';
+                ac.innerHTML += `<div style="background:#eee; padding:6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd;">🏆 ${ad.name}${displayAmount}</div>`;
+            });
+        }
 
         function showFortune() {
             const idx = Math.floor(Math.random() * fortunes.length);
             document.getElementById('fortuneText').innerText = fortunes[idx];
-            document.getElementById('fortuneModal').style.display = 'flex';
+            openModal('fortuneModal');
         }
 
-        function openModal(id) { document.getElementById(id).style.display = 'flex'; if(id==='recordModal'){document.getElementById('recordDate').valueAsDate=new Date(); updateCategories();}}
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'flex'; 
+            if(id==='recordModal'){ document.getElementById('recordDate').valueAsDate=new Date(); updateCategories(); }
+        }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-window.onload = () => {
-    // 1. 點擊彈窗外部關閉的邏輯 (保持不變)
-    window.onclick = function(event) {
-        if (event.target.classList.contains('modal')) {
-            const modalId = event.target.id;
-            if (modalId === 'fortuneModal') {
-                const modalBtn = document.querySelector('#fortuneModal .btn-main');
-                modalBtn.innerText = "好喔！";
-                modalBtn.onclick = () => closeModal('fortuneModal');
-                if(document.getElementById('cancelDeleteBtn')) document.getElementById('cancelDeleteBtn').style.display = 'none';
-            }
-            closeModal(modalId);
-        }
-    };
-
-    // 2. 初始化 UI (確保資料正確顯示)
-    updateUI(); 
-
-    // 3. 處理 URL 參數跳轉
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('dream') === '1') {
-        switchPage('dreamPage');
-    } else if (params.get('draw') === '1') {
-        switchPage('recordPage');
-        setTimeout(showFortune, 500);
-    }
-
-    // 4. 初始化 LIFF
-    liff.init({ liffId: "2010068096-vsSIzIqA" }).catch(e => console.log(e));
-};
-
+        window.onload = () => {
+            window.onclick = function(event) {
+                if (event.target.classList.contains('modal')) {
+                    const modalId = event.target.id;
+                    if (modalId === 'fortuneModal') {
+                        const modalBtn = document.querySelector('#fortuneModal .btn-main');
+                        modalBtn.innerText = "好喔！";
+                        modalBtn.onclick = () => closeModal('fortuneModal');
+                        if(document.getElementById('cancelDeleteBtn')) document.getElementById('cancelDeleteBtn').style.display = 'none';
+                    }
+                    closeModal(modalId);
+                }
+            };
+            updateUI(); 
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('dream') === '1') switchPage('dreamPage');
+            else if (params.get('draw') === '1') { switchPage('recordPage'); setTimeout(showFortune, 500); }
+            liff.init({ liffId: "2010068096-vsSIzIqA" }).catch(e => console.log(e));
+        };
     </script>
 </body>
 </html>
