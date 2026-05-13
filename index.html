@@ -251,6 +251,34 @@ if(document.getElementById('cancelDeleteBtn')) {
 openModal('fortuneModal');
 
         }
+        function fulfillDream(index) {
+    const target = dreams[index];
+    if (dreamFund < target.target) {
+        document.getElementById('fortuneText').innerText = "🐹 摳比提醒：\n基金還不夠實現這個夢想喔！\n再加油存一點點！";
+        const modalBtn = document.querySelector('#fortuneModal .btn-main');
+        modalBtn.innerText = "好喔！";
+        modalBtn.onclick = () => closeModal('fortuneModal');
+        openModal('fortuneModal');
+        return;
+    }
+    
+    dreamFund -= target.target;
+    achievedDreams.push({ name: target.name, date: new Date().toLocaleDateString() });
+    dreams.splice(index, 1);
+
+    localStorage.setItem('kobiDreamFund', dreamFund);
+    localStorage.setItem('kobiDreams', JSON.stringify(dreams));
+    localStorage.setItem('kobiAchieved', JSON.stringify(achievedDreams));
+    
+    document.getElementById('fortuneText').innerText = `✨ 夢想實現！ ✨\n\n【${target.name}】\n已成功解鎖並存入時光寶盒！\n摳比為你感到驕傲！🐹`;
+    const modalBtn = document.querySelector('#fortuneModal .btn-main');
+    modalBtn.innerText = "太棒了！";
+    modalBtn.onclick = () => closeModal('fortuneModal');
+    
+    updateUI();
+    openModal('fortuneModal');
+}
+
 
         function addDream() {
             const name = document.getElementById('dreamName').value;
