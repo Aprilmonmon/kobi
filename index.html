@@ -119,7 +119,7 @@
 
     <div id="fortuneModal" class="modal"><div class="modal-content"><div style="font-size:40px;">🐹</div><div style="color:var(--primary-blue); font-weight:bold;">摳比今日開示</div><div id="fortuneText" style="line-height:1.7; margin:15px 0; white-space:pre-line;"></div><button onclick="closeModal('fortuneModal')" class="btn-main">好喔！</button></div></div>
 
-    <script>
+   <script>
         const fortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃", "今日財運爆棚。✨\n🌈 幸運色：優雅正米色", "摳比永遠支持你！🐹\n🌈 幸運色：摳比藍", "省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠", "理財是為了自由。🕊️\n🌈 幸運色：純淨白", "夢想金庫長大中！📈\n🌈 幸運色：玫瑰金", "錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅", "控制物欲控制人生。🎮\n🌈 幸運色：經典黑", "你是省錢高手！👏\n🌈 幸運色：珊瑚橘", "記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅", "絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金", "小錢累積成大夢。🌊\n🌈 幸運色：天藍色", "好事即將發生。🌈\n🌈 幸運色：彩虹色", "今天會有意外小財。💰\n🌈 幸運色：檸檬黃"];
 
         let records = JSON.parse(localStorage.getItem('kobiRecords') || '[]');
@@ -245,17 +245,15 @@
             updateUI();
             openModal('fortuneModal');
         }
-        function deleteDream(event, index) {
-    // 阻止事件冒泡，避免點擊叉叉時也觸發了「解鎖夢想」
-    event.stopPropagation();
-    
-    if (confirm(`🐹 摳比問你：確定要取消【${dreams[index].name}】這個夢想嗎？`)) {
-        dreams.splice(index, 1);
-        localStorage.setItem('kobiDreams', JSON.stringify(dreams));
-        updateUI(); // 重新整理畫面
-    }
-}
 
+        function deleteDream(event, index) {
+            event.stopPropagation();
+            if (confirm(`🐹 摳比問你：確定要取消【${dreams[index].name}】這個夢想嗎？`)) {
+                dreams.splice(index, 1);
+                localStorage.setItem('kobiDreams', JSON.stringify(dreams));
+                updateUI();
+            }
+        }
 
         function addDream() {
             const name = document.getElementById('dreamName').value;
@@ -279,22 +277,25 @@
                 list.innerHTML += `<div class="history-item" onclick="deleteRecord(${r.id})" style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'}; cursor:pointer;"><div><b>${r.category}</b> <small>${r.date}</small><br><span style="font-size:12px; color:#999;">${r.note || ''}</span></div><b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">${r.type==='save' ? '+' : '-'}${r.amount.toLocaleString()}</b></div>`;
             });
 
-            // 3. 渲染夢想清單
-const dc = document.getElementById('dreamContainer');
-dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
+            const dc = document.getElementById('dreamContainer');
+            dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
+            dreams.forEach((d, index) => {
+                let percent = Math.min((dreamFund / d.target) * 100, 100).toFixed(1); 
+                dc.innerHTML += `
+                    <div class="dream-card" onclick="fulfillDream(${index})" style="cursor:pointer; position:relative;">
+                        <div onclick="deleteDream(event, ${index})" style="position:absolute; top:5px; right:12px; color:#ccc; font-size:20px; padding:5px; z-index:10;">&times;</div>
+                        <b>${d.name}</b> ($${d.target.toLocaleString()})
+                        <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+                        <div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}% (點擊解鎖)</div>
+                    </div>`;
+            });
 
-dreams.forEach((d, index) => {
-    let percent = Math.min((dreamFund / d.target) * 100, 100).toFixed(1); 
-    dc.innerHTML += `
-        <div class="dream-card" onclick="fulfillDream(${index})" style="cursor:pointer; position:relative;">
-            <!-- 這是新增的刪除小叉叉 -->
-            <div onclick="deleteDream(event, ${index})" style="position:absolute; top:5px; right:12px; color:#ccc; font-size:20px; padding:5px; z-index:10;">&times;</div>
-            
-            <b>${d.name}</b> ($${d.target.toLocaleString()})
-            <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-            <div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}% (點擊解鎖)</div>
-        </div>`;
-});
+            const ac = document.getElementById('achievedContainer');
+            ac.innerHTML = achievedDreams.length ? '' : '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
+            achievedDreams.forEach(ad => {
+                ac.innerHTML += `<div style="background:#eee; padding:6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd;">🏆 ${ad.name} ($${ad.amount.toLocaleString()})</div>`;
+            });
+        }
 
         function showFortune() {
             const idx = Math.floor(Math.random() * fortunes.length);
@@ -328,5 +329,3 @@ dreams.forEach((d, index) => {
             liff.init({ liffId: "2010068096-vsSIzIqA" }).catch(e => console.log(e));
         };
     </script>
-</body>
-</html>
