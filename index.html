@@ -217,8 +217,25 @@ function executeDelete() {
             records = []; 
             localStorage.setItem('kobiRecords', JSON.stringify(records));
             closeModal('settleModal');
-            alert(`結算完成！已將 $${transfer} 存入夢想基金。帳目已清空，開始新的週期吧！`);
-            updateUI();
+         // 先更新數據與畫面
+updateUI();
+
+// 用摳比的彈窗來顯示成功訊息
+const successMsg = `🎉 結算成功！\n摳比已幫你將 $${transfer.toLocaleString()} \n存入夢想金庫囉！\n新的週期也要加油喔！🐹`;
+document.getElementById('fortuneText').innerText = successMsg;
+
+// 確保按鈕文字是可愛的
+const modalBtn = document.querySelector('#fortuneModal .btn-main');
+modalBtn.innerText = "收到！(๑•̀ㅂ•́)و";
+modalBtn.onclick = () => closeModal('fortuneModal');
+
+// 隱藏可能存在的刪除取消按鈕
+if(document.getElementById('cancelDeleteBtn')) {
+    document.getElementById('cancelDeleteBtn').style.display = 'none';
+}
+
+openModal('fortuneModal');
+
         }
 
         function addDream() {
