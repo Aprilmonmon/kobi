@@ -328,15 +328,14 @@ dreams.forEach((d, index) => {
             <div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}% (點擊解鎖)</div>
         </div>`;
 });
+// 4. 渲染時光寶盒（已達成的夢想）
+const ac = document.getElementById('achievedContainer');
+ac.innerHTML = achievedDreams.length ? '' : '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
+achievedDreams.forEach(ad => {
+    // 這裡原本只有名字，我們把金額也顯示出來
+    ac.innerHTML += `<div style="background:#eee; padding:6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd;">🏆 ${ad.name}</div>`;
+});
 
-
-            // 4. 渲染時光寶盒（已達成的夢想）
-            const ac = document.getElementById('achievedContainer');
-            ac.innerHTML = achievedDreams.length ? '' : '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
-            achievedDreams.forEach(ad => {
-                ac.innerHTML += `<div style="background:#eee; padding:6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd;">🏆 ${ad.name}</div>`;
-            });
-        }
 
             
 
