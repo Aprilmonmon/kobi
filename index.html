@@ -4,33 +4,28 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>摳比 KOBI - 夢想金庫</title>
+    <title>樞比 KOBI - 夢想金庫</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; }
         body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        
         .tab-group { display: flex; width: 100%; background: white; border-bottom: 2px solid var(--line-brown); position: sticky; top: 0; z-index: 100; }
         .tab-btn { flex: 1; padding: 15px; text-align: center; font-weight: bold; cursor: pointer; border: none; background: none; color: #ccc; }
         .tab-btn.active { color: var(--line-brown); border-bottom: 4px solid var(--line-brown); }
-
         .page { display: none; width: 90%; max-width: 350px; padding: 20px 0; flex-direction: column; align-items: center; }
         .page.active { display: flex; }
-
         .kobi-container { width: 120px; height: 120px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; }
         .kobi-container img { width: 80%; }
         .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; margin-bottom: 15px; }
         .balance-amount { font-size: 28px; font-weight: bold; color: var(--primary-blue); }
-        
         .dream-card { background: white; border-radius: 15px; padding: 15px; width: 100%; border: 1px solid #ddd; margin-bottom: 12px; box-sizing: border-box; }
         .progress-bar { background: #eee; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; }
         .progress-fill { background: var(--primary-blue); height: 100%; transition: 0.5s; width: 0%; }
-        .reward-link { display: none; color: var(--primary-blue); font-size: 13px; font-weight: bold; text-decoration: none; margin-top: 10px; padding: 8px; border: 1px solid var(--primary-blue); border-radius: 8px; text-align: center; }
-
+        .reward-link { display: none; color: white; background: var(--primary-blue); font-size: 13px; font-weight: bold; text-decoration: none; margin-top: 10px; padding: 10px; border-radius: 8px; text-align: center; border: none; width: 100%; cursor: pointer; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 1000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 20px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; }
-        input, select { width: 90%; padding: 10px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; }
-        .btn-main { width: 100%; padding: 12px; border-radius: 12px; border: none; background: var(--primary-blue); color: white; font-weight: bold; margin-top: 10px; }
+        input, select { width: 90%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; font-size: 16px; }
+        .btn-main { width: 100%; padding: 12px; border-radius: 12px; border: none; background: var(--primary-blue); color: white; font-weight: bold; margin-top: 10px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -40,87 +35,72 @@
         <div class="tab-btn" onclick="switchPage('dreamPage', this)">夢想福利社</div>
     </div>
 
-    <!-- 頁面一：記帳與籤詩 -->
     <div id="recordPage" class="page active">
         <div class="kobi-container" onclick="showFortune()">
-            <img src="kobi-logo.png">
+            <img src="kobi-logo.png" alt="KOBI">
         </div>
         <div class="balance-card">
             <div style="font-size:14px; color:#999;">目前可分配餘額</div>
             <div class="balance-amount" id="mainBalance">$0</div>
         </div>
         <div style="display: flex; gap: 10px; width: 100%;">
-            <button onclick="openRecordModal('save')" style="flex:1; padding:12px; background:var(--primary-blue); color:white; border-radius:12px; border:none;">收入</button>
-            <button onclick="openRecordModal('spend')" style="flex:1; padding:12px; background:white; border:2px solid var(--line-brown); border-radius:12px;">支出</button>
+            <button onclick="openRecordModal('save')" style="flex:1; padding:12px; background:var(--primary-blue); color:white; border-radius:12px; border:none; font-weight:bold;">收入</button>
+            <button onclick="openRecordModal('spend')" style="flex:1; padding:12px; background:white; border:2px solid var(--line-brown); border-radius:12px; font-weight:bold;">支出</button>
         </div>
-        <canvas id="myChart" style="margin-top:20px;"></canvas>
+        <canvas id="myChart" style="margin-top:20px; max-height: 200px;"></canvas>
     </div>
 
-    <!-- 頁面二：夢想牆與福利社 -->
     <div id="dreamPage" class="page">
         <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <b style="font-size:18px;">☁️ 夢想清單</b>
-            <button onclick="document.getElementById('dreamModal').style.display='flex'" style="background:var(--line-brown); color:white; border:none; padding:5px 10px; border-radius:8px; font-size:12px;">+ 新增目標</button>
+            <button onclick="document.getElementById('dreamModal').style.display='flex'" style="background:var(--line-brown); color:white; border:none; padding:8px 12px; border-radius:8px; font-size:12px;">+ 新增目標</button>
         </div>
         <div id="dreamContainer" style="width:100%;"></div>
-        
         <hr style="width:100%; border:0; border-top:1px solid #ddd; margin:20px 0;">
         <b style="font-size:18px; width:100%; text-align:left;">🎁 犒賞福利社</b>
         <div style="font-size:12px; color:#999; margin-bottom:10px; width:100%;">達標後即可解鎖專屬優惠！</div>
         <div id="shopList" style="width:100%;">
-            <!-- 示範福利社商品 -->
-            <div class="dream-card" style="border-style: dashed;">
+            <div class="dream-card" style="border-style: dashed; border-color: var(--primary-blue);">
                 <b>Gorpcore 機能登山鞋</b>
-                <div style="font-size:12px; color:#999; margin-top:5px;">目標金額: $4,500</div>
-                <div id="reward-登山鞋" class="reward-link" onclick="window.open('https://www.merrell.com.tw/')">🎉 犒賞時間！前往領取福利</div>
+                <div style="font-size:12px; color:#999; margin-top:5px;">解鎖門檻: $4,500</div>
+                <button id="reward-機能登山鞋" class="reward-link" onclick="window.open('https://www.merrell.com.tw/')">🎉 犒賞時間！前往領取福利</button>
             </div>
-            <div class="dream-card" style="border-style: dashed;">
+            <div class="dream-card" style="border-style: dashed; border-color: var(--primary-blue);">
                 <b>正米色厚磅棉 Tee</b>
-                <div style="font-size:12px; color:#999; margin-top:5px;">目標金額: $1,280</div>
-                <div id="reward-米色Tee" class="reward-link" onclick="window.open('https://shopee.tw/')">🎉 已達標！點我前往購買</div>
+                <div style="font-size:12px; color:#999; margin-top:5px;">解鎖門檻: $1,280</div>
+                <button id="reward-米色Tee" class="reward-link" onclick="window.open('https://shopee.tw/')">🎉 已達標！點我前往購買</button>
             </div>
         </div>
     </div>
 
-    <!-- 記帳彈窗 -->
-    <div id="recordModal" class="modal">
-        <div class="modal-content">
-            <h3 id="modalTitle">新增紀錄</h3>
-            <select id="categorySelect">
-                <option value="生活開銷">生活開銷</option>
-                <option value="創業收入">創業收入</option>
-                <option value="股票獲利">股票獲利</option>
-                <option value="其他">其他</option>
-            </select>
-            <input type="number" id="amountInput" placeholder="輸入金額" inputmode="numeric">
-            <button class="btn-main" onclick="addRecord()">確認</button>
-            <button onclick="closeModal('recordModal')" style="width:100%; background:none; border:none; margin-top:10px; color:#999;">取消</button>
-        </div>
-    </div>
+    <!-- 彈窗區 -->
+    <div id="recordModal" class="modal"><div class="modal-content">
+        <h3 id="modalTitle">新增紀錄</h3>
+        <select id="categorySelect">
+            <option value="生活開銷">生活開銷</option>
+            <option value="創業收入">創業收入</option>
+            <option value="股票獲利">股票獲利</option>
+        </select>
+        <input type="number" id="amountInput" placeholder="輸入金額" inputmode="numeric">
+        <button class="btn-main" onclick="addRecord()">確認</button>
+        <button onclick="closeModal('recordModal')" style="width:100%; background:none; border:none; margin-top:10px; color:#999;">取消</button>
+    </div></div>
 
-    <!-- 夢想彈窗 -->
-    <div id="dreamModal" class="modal">
-        <div class="modal-content">
-            <h3>設定夢想目標</h3>
-            <p style="font-size:12px; color:#999;">例如：1280萬的房子 或 登山鞋</p>
-            <input type="text" id="dreamName" placeholder="目標名稱 (需與福利社名稱對應)">
-            <input type="number" id="dreamTarget" placeholder="目標金額">
-            <button class="btn-main" onclick="addDream()">開始存錢！</button>
-            <button onclick="closeModal('dreamModal')" style="width:100%; background:none; border:none; margin-top:10px; color:#999;">取消</button>
-        </div>
-    </div>
+    <div id="dreamModal" class="modal"><div class="modal-content">
+        <h3>設定夢想目標</h3>
+        <input type="text" id="dreamName" placeholder="例如: 機能登山鞋">
+        <input type="number" id="dreamTarget" placeholder="目標金額">
+        <button class="btn-main" onclick="addDream()">開始存錢！</button>
+        <button onclick="closeModal('dreamModal')" style="width:100%; background:none; border:none; margin-top:10px; color:#999;">取消</button>
+    </div></div>
 
-    <!-- 籤詩彈窗 -->
-    <div id="fortuneModal" class="modal">
-        <div class="modal-content">
-            <div style="color:var(--primary-blue); font-weight:bold; margin-bottom:10px;">🌟 摳比今日開示 🌟</div>
-            <div id="fortuneText" style="line-height:1.6; margin-bottom:15px; white-space:pre-line; text-align: left;"></div>
-            <button onclick="closeModal('fortuneModal')" style="width:100%; background:var(--primary-blue); color:white; border:none; border-radius:15px; padding:10px;">收下好運</button>
-        </div>
-    </div>
+    <div id="fortuneModal" class="modal"><div class="modal-content">
+        <div style="color:var(--primary-blue); font-weight:bold; margin-bottom:10px;">🌟 樞比今日開示 🌟</div>
+        <div id="fortuneText" style="line-height:1.6; margin-bottom:15px; white-space:pre-line; text-align: left; font-size: 14px;"></div>
+        <button onclick="closeModal('fortuneModal')" style="width:100%; background:var(--primary-blue); color:white; border:none; border-radius:15px; padding:12px; font-weight:bold;">收下好運</button>
+    </div></div>
 
     <script>
-        // 完整的 50 則籤詩資料已包含在此
         const kobiFortunes = [
             "財神爺今天住你家，別忘了幫祂準備下午茶！☕\n🌈 幸運色：暖陽黃",
             "今日財運爆棚，穿漂亮一點，錢財自然跟上。✨\n🌈 幸運色：優雅正米色",
@@ -171,7 +151,7 @@
             "適合與老友聚會，資訊交換可能帶來財路。📞\n🌈 幸運色：橄欖綠",
             "聽聽音樂，放鬆心情。好的情緒能吸引好的財運。🎵\n🌈 幸運色：靛藍色",
             "今天的你有如神助，想做的企劃趕快寫下來。📝\n🌈 幸運色：檸檬黃",
-            "最後一則開示：相信你自己。摳比相信你一定做得到。🐹\n🌈 幸運色：摳比藍"
+            "最後一則開示：相信你自己。樞比相信你一定做得到。🐹\n🌈 幸運色：摳比藍"
         ];
 
         let records = JSON.parse(localStorage.getItem('kobiRecords') || '[]');
@@ -180,9 +160,11 @@
         let chart;
 
         async function initLiff() {
-            await liff.init({ liffId: "2010068096-vsSIzIqA" });
-            if (!liff.isLoggedIn()) liff.login();
-            updateBalance();
+            try {
+                await liff.init({ liffId: "2010068096-vsSIzIqA" });
+                if (!liff.isLoggedIn()) { liff.login(); }
+                updateBalance();
+            } catch (e) { console.log('LIFF Init Error', e); updateBalance(); }
         }
 
         function switchPage(pageId, btn) {
@@ -201,9 +183,8 @@
 
         function addRecord() {
             const amt = parseInt(document.getElementById('amountInput').value);
-            const cat = document.getElementById('categorySelect').value;
             if(!amt) return;
-            records.push({ type: currentRecordType, amount: amt, category: cat, date: new Date() });
+            records.push({ type: currentRecordType, amount: amt, date: new Date() });
             localStorage.setItem('kobiRecords', JSON.stringify(records));
             closeModal('recordModal');
             document.getElementById('amountInput').value = '';
@@ -241,14 +222,11 @@
                         <b>${d.name}</b>
                         <div style="font-size:18px; margin:5px 0;">$${d.target.toLocaleString()}</div>
                         <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-                        <div style="font-size:12px; color:#888;">${isDone ? '🎉 你已經可以擁有它了！' : '還差 $' + (d.target - total).toLocaleString()}</div>
+                        <div style="font-size:12px; color:#888;">${isDone ? '🎉 夢想達成！' : '還差 $' + (d.target - total).toLocaleString()}</div>
                     </div>
                 `;
-                // 檢查福利社中是否有對應名稱的獎勵連結
-                const rewardLink = document.getElementById('reward-' + d.name);
-                if(rewardLink) {
-                    rewardLink.style.display = isDone ? 'block' : 'none';
-                }
+                const rewardBtn = document.getElementById('reward-' + d.name);
+                if(rewardBtn) { rewardBtn.style.display = isDone ? 'block' : 'none'; }
             });
         }
 
