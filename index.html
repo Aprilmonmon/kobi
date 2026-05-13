@@ -256,7 +256,10 @@ function executeDelete() {
             const dc = document.getElementById('dreamContainer');
             dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
             dreams.forEach(d => {
-                const percent = Math.min(Math.floor((dreamFund / d.target) * 100), 100);
+                // 計算到小數點後第一位，讓你更有感
+let rawPercent = (dreamFund / d.target) * 100;
+const percent = Math.min(rawPercent, 100).toFixed(1); 
+
                 dc.innerHTML += `<div class="dream-card"><b>${d.name}</b> ($${d.target.toLocaleString()})<div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div><div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}%</div></div>`;
             });
         }
