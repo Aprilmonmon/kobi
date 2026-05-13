@@ -248,10 +248,23 @@
 
         function deleteDream(event, index) {
     event.stopPropagation();
-    if (confirm(`🐹 摳比問你：確定要取消【${dreams[index].name}】這個夢想嗎？`)) {
+    // 使用 fortuneModal 代替 confirm 讓 UI 更美觀
+    document.getElementById('fortuneText').innerText = `🐹 摳比問你：\n確定要取消【${dreams[index].name}】這個夢想嗎？`;
+    const modalBtn = document.querySelector('#fortuneModal .btn-main');
+    modalBtn.innerText = "確定取消";
+    
+    modalBtn.onclick = () => {
         dreams.splice(index, 1);
         localStorage.setItem('kobiDreams', JSON.stringify(dreams));
-        updateUI(); // 移到確認刪除之後執行
+        closeModal('fortuneModal');
+        updateUI();
+        // 恢復按鈕預設功能
+        modalBtn.innerText = "好喔！";
+        modalBtn.onclick = () => closeModal('fortuneModal');
+    };
+    openModal('fortuneModal');
+}
+
     }
 }
 
