@@ -15,16 +15,20 @@
         .page { display: none; width: 90%; max-width: 350px; padding: 20px 0; flex-direction: column; align-items: center; }
         .page.active { display: flex !important; }
         .kobi-container { width: 130px; height: 130px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; }
-        .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; box-sizing: border-box; }
-        .balance-amount { font-size: 32px; font-weight: bold; color: var(--primary-blue); }
+        .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 20px; }
+        .dream-card { background: white; border-radius: 15px; padding: 15px; width: 100%; border: 1px solid #ddd; margin-bottom: 12px; box-sizing: border-box; }
+        .progress-bar { background: #eee; height: 14px; border-radius: 7px; margin: 12px 0; overflow: hidden; }
+        .progress-fill { background: var(--primary-blue); height: 100%; width: 0%; transition: 0.8s; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        .btn-main { width: 100%; padding: 14px; background: var(--primary-blue); color: white; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
 
     <div class="tab-group">
-        <div id="btn-record" class="tab-btn active" onclick="switchPage('recordPage', this)">樞比記帳</div>
+        <div id="btn-record" class="tab-btn active" onclick="switchPage('recordPage', this)">摳比記帳</div>
         <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage', this)">夢想福利社</div>
     </div>
 
@@ -34,62 +38,92 @@
         </div>
         <div class="balance-card">
             <div style="font-size:14px; color:#999;">目前可分配餘額</div>
-            <div class="balance-amount" id="mainBalance">$0</div>
+            <div id="mainBalance" style="font-size:32px; font-weight:bold; color:var(--primary-blue);">$0</div>
         </div>
+        <button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆收支</button>
         <canvas id="myChart" style="margin-top:25px; max-height: 180px;"></canvas>
     </div>
 
     <div id="dreamPage" class="page">
         <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <b style="font-size:20px;">☁️ 夢想清單</b>
+            <button onclick="openModal('dreamModal')" style="background:var(--line-brown); color:white; border:none; padding:8px 15px; border-radius:10px;">+ 新增目標</button>
         </div>
         <div id="dreamContainer" style="width:100%;"></div>
+        <hr style="width:100%; border:0.5px solid #eee; margin: 20px 0;">
+        <b style="width:100%; text-align:left; margin-bottom:10px;">🐹 摳比福利社推薦</b>
+        <div id="recommendContainer" style="width:100%;"></div>
     </div>
 
+    <div id="recordModal" class="modal"><div class="modal-content">
+        <h3>💰 新增紀錄</h3>
+        <input type="date" id="recordDate">
+        <select id="recordType"><option value="save">收入 / 存錢</option><option value="spend">支出 / 購買</option></select>
+        <input type="number" id="recordAmount" placeholder="金額">
+        <button onclick="addRecord()" class="btn-main">存入金庫</button>
+        <button onclick="closeModal('recordModal')" style="background:none; border:none; color:#999; margin-top:10px;">取消</button>
+    </div></div>
+
+    <div id="dreamModal" class="modal"><div class="modal-content">
+        <h3>✨ 設定新目標</h3>
+        <input type="text" id="dreamName" placeholder="想買什麼？">
+        <input type="number" id="dreamTarget" placeholder="需要多少錢？">
+        <button onclick="addDream()" class="btn-main">啟動夢想計畫</button>
+        <button onclick="closeModal('dreamModal')" style="background:none; border:none; color:#999; margin-top:10px;">取消</button>
+    </div></div>
+
     <div id="fortuneModal" class="modal"><div class="modal-content">
-        <div style="color:var(--primary-blue); font-weight:bold; margin-bottom:10px;">🐹 樞比今日開示 🐹</div>
+        <div style="color:var(--primary-blue); font-weight:bold; margin-bottom:10px;">🐹 摳比今日開示 🐹</div>
         <div id="fortuneText" style="line-height:1.7; margin:15px 0; white-space:pre-line; text-align: left;"></div>
-        <button onclick="closeModal('fortuneModal')" style="width:100%; padding:14px; background:var(--primary-blue); color:white; border-radius:14px; border:none; font-weight:bold;">收下這份好運</button>
+        <button onclick="closeModal('fortuneModal')" class="btn-main">收下這份好運</button>
     </div></div>
 
     <script>
-        const kobiFortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃", "今日財運爆棚。✨\n🌈 幸運色：優雅正米色", "摳比永遠支持你！🐹\n🌈 幸運色：摳比藍", "省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠", "今天適合去公園走走。🌳\n🌈 幸運色：大地棕", "理財是為了自由。🕊️\n🌈 幸運色：純淨白", "夢想金庫長大中！📈\n🌈 幸運色：玫瑰金", "驚喜在堅持裡。✨\n🌈 幸運色：珍珠白", "錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅", "數字敏感點，運氣好點。色\n🌈 幸運色：薰衣草紫", "早點睡，夢裡都有。🌙\n🌈 幸運色：深藍色", "別忘記存錢初衷。⛰️\n🌈 幸運色：墨綠色", "小額存款也是投票。🗳️\n🌈 幸運色：芥末黃", "你更懂價值了。💎\n🌈 幸運色：香檳金", "意外的省錢點子！💡\n🌈 幸運色：螢光綠", "控制物欲控制人生。🎮\n🌈 幸運色：經典黑", "喝水健康又省錢。💧\n🌈 幸運色：透明藍", "夢想很貴要努力。☁️\n🌈 幸運色：天藍色", "帳單是成長養分。🌱\n🌈 幸運色：嫩葉綠", "衝動購物減少點。🧘\n🌈 幸運色：莫蘭迪紫", "財富像肌肉。🏋️\n🌈 幸運色：鋼鐵灰", "整理錢包讓錢舒服。👛\n🌈 幸運色：粉末藍", "看準目標再出手。🦅\n🌈 幸運色：深咖啡", "你是省錢高手！👏\n🌈 幸運色：珊瑚橘", "記帳是跟錢對話。💬\n🌈 幸運色：石英粉", "錢花在刀口上。🔪\n🌈 幸運色：銀灰色", "你有計畫很有魅力。🌟\n🌈 幸運色：檸檬黃", "存錢快樂買不到。🍭\n🌈 幸運色：薄荷綠", "方向對了早晚會到。🐢\n🌈 幸運色：軍綠色", "避開不必要支出。🧚\n🌈 幸運色：蜜桃粉", "存錢過程可以甜。🍬\n🌈 幸運色：焦糖色", "習慣就像呼吸。🌬️\n🌈 幸運色：淺米色", "適合斷捨離。🧹\n🌈 幸運色：象牙白", "保護你的價值。🛡️\n🌈 幸運色：古銅色", "買需要的非想要的。 owls\n🌈 幸運色：暗紫色", "投資健康划算。🍏\n🌈 幸運色：草本綠", "讓錢流向正確處。🌊\n🌈 幸運色：海軍藍", "耐心換來資產。🕰️\n🌈 幸運色：酒紅色", "銅板能搬動大山。⛰️\n🌈 幸運色：金屬銀", "努力就有回報。🎟️\n🌈 幸運色：亮點橘", "跟家人吃飯溫暖。🍲\n🌈 幸運色：溫暖褐", "尊重每一分錢。🤝\n🌈 幸運色：炭灰色", "計畫下個旅行。✈️\n🌈 幸運色：蒂芙尼藍", "記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅", "絕對可以存到錢！🏆\n🌈 幸運色：冠軍金"];
+        const kobiFortunes = [
+            "財神爺今天住你家！☕\n🌈 幸運色：暖陽黃", "今日財運爆棚。✨\n🌈 幸運色：優雅正米色", "摳比永遠支持你！🐹\n🌈 幸運色：摳比藍", "省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠", "今天適合去公園走走。🌳\n🌈 幸運色：大地棕", "理財是為了自由。🕊️\n🌈 幸運色：純淨白", "夢想金庫長大中！📈\n🌈 幸運色：玫瑰金", "驚喜在堅持裡。✨\n🌈 幸運色：珍珠白", "錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅", "數字敏感點，運氣好點。色\n🌈 幸運色：薰衣草紫", "早點睡，夢裡都有。🌙\n🌈 幸運色：深藍色", "別忘記存錢初衷。⛰️\n🌈 幸運色：墨綠色", "小額存款也是投票。🗳️\n🌈 幸運色：芥末黃", "你更懂價值了。💎\n🌈 幸運色：香檳金", "意外的省錢點子！💡\n🌈 幸運色：螢光綠", "控制物欲控制人生。🎮\n🌈 幸運色：經典黑", "喝水健康又省錢。💧\n🌈 幸運色：透明藍", "夢想很貴要努力。☁️\n🌈 幸運色：天藍色", "帳單是成長養分。🌱\n🌈 幸運色：嫩葉綠", "衝動購物減少點。🧘\n🌈 幸運色：莫蘭迪紫", "財富像肌肉。🏋️\n🌈 幸運色：鋼鐵灰", "整理錢包讓錢舒服。👛\n🌈 幸運色：粉末藍", "看準目標再出手。🦅\n🌈 幸運色：深咖啡", "你是省錢高手！👏\n🌈 幸運色：珊瑚橘", "記帳是跟錢對話。💬\n🌈 幸運色：石英粉", "錢花在刀口上。🔪\n🌈 幸運色：銀灰色", "你有計畫很有魅力。🌟\n🌈 幸運色：檸檬黃", "存錢快樂買不到。🍭\n🌈 幸運色：薄荷綠", "方向對了早晚會到。🐢\n🌈 幸運色：軍綠色", "避開不必要支出。🧚\n🌈 幸運色：蜜桃粉", "存錢過程可以甜。🍬\n🌈 幸運色：焦糖色", "習慣就像呼吸。🌬️\n🌈 幸運色：淺米色", "適合斷捨離。🧹\n🌈 幸運色：象牙白", "保護你的價值。🛡️\n🌈 幸運色：古銅色", "買需要的非想要的。🦉\n🌈 幸運色：暗紫色", "投資健康划算。🍏\n🌈 幸運色：草本綠", "讓錢流向正確處。🌊\n🌈 幸運色：海軍藍", "耐心換來資產。🕰️\n🌈 幸運色：酒紅色", "銅板能搬動大山。⛰️\n🌈 幸運色：金屬銀", "努力就有回報。🎟️\n🌈 幸運色：亮點橘", "跟家人吃飯溫暖。🍲\n🌈 幸運色：溫暖褐", "尊重每一分錢。🤝\n🌈 幸運色：炭灰色", "計畫下個旅行目標。✈️\n🌈 幸運色：蒂芙尼藍", "記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅", "絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金"
+        ];
 
         let records = JSON.parse(localStorage.getItem('kobiRecords') || '[]');
         let dreams = JSON.parse(localStorage.getItem('kobiDreams') || '[]');
         let chart;
 
-        function checkParams() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('dream') === '1') {
-                switchPage('dreamPage', document.getElementById('btn-dream'));
-            } else if (params.get('draw') === '1') {
-                setTimeout(() => showFortune(), 500);
+        function addRecord() {
+            const date = document.getElementById('recordDate').value;
+            const type = document.getElementById('recordType').value;
+            const amount = parseInt(document.getElementById('recordAmount').value);
+            if (date && amount) {
+                records.push({ date, type, amount });
+                localStorage.setItem('kobiRecords', JSON.stringify(records));
+                closeModal('recordModal');
+                updateUI();
             }
         }
 
-        async function initLiff() {
-            try { await liff.init({ liffId: "2010068096-vsSIzIqA" }); } catch (e) {}
-            updateUI();
-        }
-
-        function switchPage(pageId, btn) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            btn.classList.add('active');
-        }
-
-        function showFortune() {
-            const idx = Math.floor(Math.random() * kobiFortunes.length);
-            document.getElementById('fortuneText').innerText = kobiFortunes[idx];
-            document.getElementById('fortuneModal').style.display = 'flex';
+        function addDream() {
+            const name = document.getElementById('dreamName').value;
+            const target = parseInt(document.getElementById('dreamTarget').value);
+            if (name && target) {
+                dreams.push({ name, target });
+                localStorage.setItem('kobiDreams', JSON.stringify(dreams));
+                closeModal('dreamModal');
+                renderDreams();
+            }
         }
 
         function updateUI() {
             const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
             document.getElementById('mainBalance').innerText = `$${total.toLocaleString()}`;
             renderChart();
+        }
+
+        function renderDreams() {
+            const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
+            const container = document.getElementById('dreamContainer');
+            container.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">目前還沒有目標喔！</div>';
+            dreams.forEach(d => {
+                const percent = Math.min(Math.floor((total / d.target) * 100), 100);
+                container.innerHTML += `<div class="dream-card"><b>${d.name}</b> ($${d.target.toLocaleString()})<div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div><div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}%</div></div>`;
+            });
         }
 
         function renderChart() {
@@ -104,10 +138,35 @@
             });
         }
 
+        function switchPage(pageId, btn) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+            btn.classList.add('active');
+            if(pageId === 'dreamPage') renderDreams();
+        }
+
+        function showFortune() {
+            const idx = Math.floor(Math.random() * kobiFortunes.length);
+            document.getElementById('fortuneText').innerText = kobiFortunes[idx];
+            document.getElementById('fortuneModal').style.display = 'flex';
+        }
+
+        function openModal(id) { 
+            document.getElementById(id).style.display = 'flex';
+            if(id === 'recordModal') document.getElementById('recordDate').valueAsDate = new Date();
+        }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
+        async function initLiff() {
+            try { await liff.init({ liffId: "2010068096-vsSIzIqA" }); } catch (e) {}
+            updateUI();
+        }
+
         window.onload = () => {
-            checkParams();
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('dream') === '1') switchPage('dreamPage', document.getElementById('btn-dream'));
+            else if (params.get('draw') === '1') setTimeout(() => showFortune(), 500);
             initLiff();
         };
     </script>
