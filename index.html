@@ -75,14 +75,23 @@
         let chart;
 
         // 🟢 修改點：讓頁面一加載就檢查參數，不要等 LIFF
-        function checkParams() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('dream') === '1') {
-                switchPage('dreamPage', document.getElementById('btn-dream'));
-            } else if (params.get('draw') === '1') {
-                showFortune();
-            }
-        }
+function checkParams() {
+    const params = new URLSearchParams(window.location.search);
+    
+    // 處理夢想分頁跳轉
+    if (params.get('dream') === '1') {
+        const btn = document.getElementById('btn-dream');
+        if (btn) switchPage('dreamPage', btn);
+    } 
+    
+    // 處理籤詩彈窗：加入 500 毫秒延遲，確保畫面準備好了
+    if (params.get('draw') === '1') {
+        setTimeout(() => {
+            showFortune();
+        }, 500);
+    }
+}
+
 
         async function initLiff() {
             try {
