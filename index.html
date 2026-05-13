@@ -61,9 +61,16 @@
             <b style="color:#FFB7B2;">GO ></b>
         </div>
 
-        <button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆紀錄</button>
-        <div id="listItems" style="width:100%; margin-top:20px;"></div>
+<!-- 原本的按鈕 -->
+<button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆紀錄</button>
+
+<!-- 新增這行提示文字 -->
+<div style="font-size: 11px; color: #ccc; text-align: center; margin-top: 8px;">💡 溫馨提示：點擊下方紀錄項目即可刪除資料</div>
+
     </div>
+    <!-- 在提示文字 div 標籤結束後補上這行 -->
+<div id="listItems" style="width:100%; margin-top:20px;"></div>
+
 
     <div id="dreamPage" class="page">
         <div class="balance-card" style="background: var(--primary-blue); color: white; border:none;">
@@ -155,12 +162,26 @@
                 updateUI();
             }
         }
-        function deleteRecord(id) {
-        if (confirm("🐹 摳比問你：確定要刪除這筆紀錄嗎？")) {
-        records = records.filter(r => r.id !== id);
-        localStorage.setItem('kobiRecords', JSON.stringify(records));
-        updateUI();
-    }
+        let deleteId = null; // 先在外面設一個變數記住要刪哪一筆
+
+function deleteRecord(id) {
+    deleteId = id;
+    // 不使用系統 confirm，直接改用今日開示那個漂亮的視窗來問
+    document.getElementById('fortuneText').innerText = "🐹 摳比問你：確定要刪除這筆紀錄嗎？";
+    const modalBtn = document.querySelector('#fortuneModal .btn-main');
+    modalBtn.innerText = "確定刪除";
+    modalBtn.onclick = executeDelete; // 點擊後執行真正的刪除
+    openModal('fortuneModal');
+}
+
+function executeDelete() {
+    records = records.filter(r => r.id !== deleteId);
+    localStorage.setItem('kobiRecords', JSON.stringify(records));
+    closeModal('fortuneModal');
+    // 把按鈕文字恢復原狀，避免下次打開「今日開示」變刪除
+    document.querySelector('#fortuneModal .btn-main').innerText = "好喔！";
+    document.querySelector('#fortuneModal .btn-main').onclick = () => closeModal('fortuneModal');
+    updateUI();
 }
 
 
