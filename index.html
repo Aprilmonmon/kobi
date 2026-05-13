@@ -246,9 +246,9 @@
             openModal('fortuneModal');
         }
 
-        function deleteDream(event, index) {
+ function deleteDream(event, index) {
     event.stopPropagation();
-    // 使用 fortuneModal 代替 confirm 讓 UI 更美觀
+    // 設置彈窗文字
     document.getElementById('fortuneText').innerText = `🐹 摳比問你：\n確定要取消【${dreams[index].name}】這個夢想嗎？`;
     const modalBtn = document.querySelector('#fortuneModal .btn-main');
     modalBtn.innerText = "確定取消";
@@ -263,11 +263,7 @@
         modalBtn.onclick = () => closeModal('fortuneModal');
     };
     openModal('fortuneModal');
-}
-
-    }
-}
-
+} // 這裡只有一個括號，結束函式
 
         function addDream() {
             const name = document.getElementById('dreamName').value;
