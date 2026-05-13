@@ -293,11 +293,13 @@ openModal('fortuneModal');
             }
         }
 
-        function updateUI() {
-                        const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
+                function updateUI() {
+            // 1. 計算並顯示餘額
+            const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
             document.getElementById('mainBalance').innerText = `$${total.toLocaleString()}`;
             document.getElementById('dreamFundTotal').innerText = `$${dreamFund.toLocaleString()}`;
             
+            // 2. 渲染記帳紀錄清單
             const list = document.getElementById('listItems');
             list.innerHTML = records.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">本期尚無紀錄</div>';
             records.slice(-10).reverse().forEach(r => {
@@ -313,38 +315,30 @@ openModal('fortuneModal');
                     </div>`;
             });
 
-            // 夢想清單區：確保有 onclick="fulfillDream(${index})"
-            const dc = document.getElementById('dreamContainer');
-            dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
-            dreams.forEach((d, index) => {
-                let rawPercent = (dreamFund / d.target) * 100;
-                const percent = Math.min(rawPercent, 100).toFixed(1); 
-                dc.innerHTML += `
-                    <div class="dream-card" onclick="fulfillDream(${index})" style="cursor:pointer;">
-                        <b>${d.name}</b> ($${d.target.toLocaleString()})
-                        <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-                        <div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}% (點擊解鎖)</div>
-                    </div>`;
-            });
+           // 3. 渲染夢想清單 (保留這一段，並加入 onclick)
+const dc = document.getElementById('dreamContainer');
+dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
+dreams.forEach((d, index) => {
+    let rawPercent = (dreamFund / d.target) * 100;
+    const percent = Math.min(rawPercent, 100).toFixed(1); 
+    dc.innerHTML += `
+        <div class="dream-card" onclick="fulfillDream(${index})" style="cursor:pointer;">
+            <b>${d.name}</b> ($${d.target.toLocaleString()})
+            <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+            <div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}% (點擊解鎖)</div>
+        </div>`;
+});
 
-            // 📦 渲染時光寶盒
+
+            // 4. 渲染時光寶盒（已達成的夢想）
             const ac = document.getElementById('achievedContainer');
             ac.innerHTML = achievedDreams.length ? '' : '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
             achievedDreams.forEach(ad => {
                 ac.innerHTML += `<div style="background:#eee; padding:6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd;">🏆 ${ad.name}</div>`;
             });
-
-
-            const dc = document.getElementById('dreamContainer');
-            dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
-            dreams.forEach(d => {
-                // 計算到小數點後第一位，讓你更有感
-let rawPercent = (dreamFund / d.target) * 100;
-const percent = Math.min(rawPercent, 100).toFixed(1); 
-
-                dc.innerHTML += `<div class="dream-card"><b>${d.name}</b> ($${d.target.toLocaleString()})<div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div><div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}%</div></div>`;
-            });
         }
+
+            
 
         function showFortune() {
             const idx = Math.floor(Math.random() * fortunes.length);
@@ -355,12 +349,11 @@ const percent = Math.min(rawPercent, 100).toFixed(1);
         function openModal(id) { document.getElementById(id).style.display = 'flex'; if(id==='recordModal'){document.getElementById('recordDate').valueAsDate=new Date(); updateCategories();}}
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        window.onload = () => {
-    // 點擊彈窗外部（黑色陰影）可關閉
+window.onload = () => {
+    // 1. 點擊彈窗外部關閉的邏輯 (保持不變)
     window.onclick = function(event) {
         if (event.target.classList.contains('modal')) {
             const modalId = event.target.id;
-            // 如果點的是刪除彈窗的背景，關閉時要恢復按鈕狀態
             if (modalId === 'fortuneModal') {
                 const modalBtn = document.querySelector('#fortuneModal .btn-main');
                 modalBtn.innerText = "好喔！";
@@ -371,18 +364,22 @@ const percent = Math.min(rawPercent, 100).toFixed(1);
         }
     };
 
+    // 2. 初始化 UI (確保資料正確顯示)
+    updateUI(); 
+
+    // 3. 處理 URL 參數跳轉
     const params = new URLSearchParams(window.location.search);
     if (params.get('dream') === '1') {
         switchPage('dreamPage');
     } else if (params.get('draw') === '1') {
         switchPage('recordPage');
         setTimeout(showFortune, 500);
-    } else {
-        updateUI();
     }
-    liff.init({ liffId: "2010068096-vsSIzIqA" }).catch(e => console.log(e));
 
-        };
+    // 4. 初始化 LIFF
+    liff.init({ liffId: "2010068096-vsSIzIqA" }).catch(e => console.log(e));
+};
+
     </script>
 </body>
 </html>
