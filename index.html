@@ -10,20 +10,20 @@
         :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; }
         body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; overflow-x: hidden; }
         .tab-group { display: flex; width: 100%; background: white; border-bottom: 2px solid var(--line-brown); position: sticky; top: 0; z-index: 1000; }
-        .tab-btn { flex: 1; padding: 18px 10px; text-align: center; font-weight: bold; cursor: pointer; border: none; background: none; color: #ccc; font-size: 16px; transition: 0.3s; }
+        .tab-btn { flex: 1; padding: 18px 10px; text-align: center; font-weight: bold; cursor: pointer; border: none; background: none; color: #ccc; font-size: 16px; }
         .tab-btn.active { color: var(--line-brown); border-bottom: 4px solid var(--line-brown); }
         .page { display: none; width: 90%; max-width: 350px; padding: 20px 0; flex-direction: column; align-items: center; }
         .page.active { display: flex !important; }
-        .kobi-container { width: 130px; height: 130px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; -webkit-tap-highlight-color: transparent; }
+        .kobi-container { width: 130px; height: 130px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 20px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; }
         .kobi-container img { width: 85%; }
         .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; margin-bottom: 20px; box-sizing: border-box; }
         .balance-amount { font-size: 32px; font-weight: bold; color: var(--primary-blue); }
-        .dream-card { background: white; border-radius: 15px; padding: 15px; width: 100%; border: 1px solid #ddd; margin-bottom: 12px; box-sizing: border-box; }
+        .dream-card { background: white; border-radius: 15px; padding: 15px; width: 100%; border: 1px solid #ddd; margin-bottom: 12px; }
         .progress-bar { background: #eee; height: 14px; border-radius: 7px; margin: 12px 0; overflow: hidden; }
-        .progress-fill { background: var(--primary-blue); height: 100%; transition: 0.8s; width: 0%; }
+        .progress-fill { background: var(--primary-blue); height: 100%; width: 0%; transition: 0.8s; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; box-sizing: border-box; }
-        .btn-main { width: 100%; padding: 14px; border-radius: 14px; border: none; background: var(--primary-blue); color: white; font-weight: bold; margin-top: 10px; cursor: pointer; }
+        .modal-content { background: white; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; }
+        .btn-main { width: 100%; padding: 14px; border-radius: 14px; border: none; background: var(--primary-blue); color: white; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -51,7 +51,7 @@
     <div id="dreamPage" class="page">
         <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
             <b style="font-size:20px;">☁️ 夢想清單</b>
-            <button onclick="document.getElementById('dreamModal').style.display='flex'" style="background:var(--line-brown); color:white; border:none; padding:8px 15px; border-radius:10px; font-size:13px;">+ 新增目標</button>
+            <button onclick="document.getElementById('dreamModal').style.display='flex'" style="background:var(--line-brown); color:white; border:none; padding:8px 15px; border-radius:10px;">+ 新增目標</button>
         </div>
         <div id="dreamContainer" style="width:100%;"></div>
     </div>
@@ -63,34 +63,33 @@
     </div></div>
 
     <script>
+        // 為了節省篇幅，這裏只放三則，請你自己把之前那 50 則補在 [ ] 裡面喔！
         const kobiFortunes = [
             "財神爺今天住你家，別忘了幫祂準備下午茶！☕\n🌈 幸運色：暖陽黃",
             "今日財運爆棚，穿漂亮一點，錢財自然跟上。✨\n🌈 幸運色：優雅正米色",
             "不管世界怎麼變，樞比永遠在手機裡支持你！🐹\n🌈 幸運色：樞比藍"
-            // ...此處省略其餘籤詩，請在編輯時保留完整 50 則
         ];
 
         let records = JSON.parse(localStorage.getItem('kobiRecords') || '[]');
         let dreams = JSON.parse(localStorage.getItem('kobiDreams') || '[]');
         let chart;
 
+        // 🟢 修改點：讓頁面一加載就檢查參數，不要等 LIFF
+        function checkParams() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('dream') === '1') {
+                switchPage('dreamPage', document.getElementById('btn-dream'));
+            } else if (params.get('draw') === '1') {
+                showFortune();
+            }
+        }
+
         async function initLiff() {
             try {
                 await liff.init({ liffId: "2010068096-vsSIzIqA" });
                 if (!liff.isLoggedIn()) { liff.login(); }
-                
-                // 初始化 UI
-                updateUI();
-                
-                // 【核心修改：讀取網址參數進行跳轉】
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('dream') === '1') {
-                    switchPage('dreamPage', document.getElementById('btn-dream'));
-                } else if (urlParams.get('draw') === '1') {
-                    showFortune();
-                }
-
-            } catch (e) { console.error('LIFF Init Error', e); updateUI(); }
+            } catch (e) { console.log('LIFF Error'); }
+            updateUI();
         }
 
         function switchPage(pageId, btn) {
@@ -113,10 +112,40 @@
             renderChart();
         }
 
+        function renderDreams() {
+            const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
+            const container = document.getElementById('dreamContainer');
+            container.innerHTML = '';
+            dreams.forEach(d => {
+                const percent = Math.min(Math.floor((total / d.target) * 100), 100);
+                container.innerHTML += `
+                    <div class="dream-card">
+                        <b>${d.name}</b>
+                        <div style="font-size:20px; margin:8px 0; color:var(--line-brown);">$${d.target.toLocaleString()}</div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+                    </div>`;
+            });
+        }
+
+        function renderChart() {
+            const s = records.filter(r => r.type === 'save').reduce((a, b) => a + b.amount, 0);
+            const p = records.filter(r => r.type === 'spend').reduce((a, b) => a + b.amount, 0);
+            const ctx = document.getElementById('myChart').getContext('2d');
+            if(chart) chart.destroy();
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels:['收入','支出'], datasets:[{data:[s||1, p], backgroundColor:['#A2D2FF','#9E7E6B'], borderWidth: 0}]},
+                options: { cutout: '80%', plugins: { legend: { display: false } } }
+            });
+        }
+
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
-        // 其餘函數 (renderChart, renderDreams 等) 請保持原樣
-        window.onload = initLiff;
+        // 啟動順序：先檢查參數跳轉，再啟動 LIFF
+        window.onload = () => {
+            checkParams();
+            initLiff();
+        };
     </script>
 </body>
 </html>
