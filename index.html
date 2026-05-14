@@ -123,22 +123,23 @@
 
 <div class="tab-group">
     <div id="btn-record" class="tab-btn active" onclick="switchPage('recordPage')">摳比記帳</div>
-    <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想福利社</div>
+    <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想金庫</div>
+    <div id="btn-shop" class="tab-btn" onclick="switchPage('shopPage')">摳摳福利社</div>
 </div>
 
 <div id="recordPage" class="page active">
-    <div class="kobi-container" onclick="showFortune()">
+    <div class="kobi-container" id="kobiBtn">
         <img src="kobi-logo.png" alt="KOBI" style="width:85%;">
     </div>
     <div class="balance-card">
         <div style="font-size:14px; color:#999;">本期金庫餘額</div>
         <div id="mainBalance" style="font-size:32px; font-weight:bold; color:var(--primary-blue);">$0</div>
     </div>
-    <div class="settle-guide" onclick="openSettleModal()">
+    <div class="settle-guide" id="settleGuideBtn">
         <span>✨ 週期結束了？快來結算存基金！</span>
         <b style="color:#FFB7B2;">GO ></b>
     </div>
-    <button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆紀錄</button>
+    <button id="openRecordModalBtn" class="btn-main">＋ 新增一筆紀錄</button>
     <div style="font-size:11px; color:#ccc; text-align:center; margin-top:8px;">💡 溫馨提示：點擊下方紀錄項目即可刪除資料</div>
     <div id="listItems" style="width:100%; margin-top:20px;"></div>
 
@@ -160,7 +161,7 @@
     </div>
     <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
         <b style="font-size:18px;">☁️ 我的夢想清單</b>
-        <button onclick="openModal('dreamModal')" style="background:var(--line-brown); color:white; border:none; padding:8px 12px; border-radius:10px; font-size:12px; cursor:pointer;">+ 新目標</button>
+        <button id="openDreamModalBtn" style="background:var(--line-brown); color:white; border:none; padding:8px 12px; border-radius:10px; font-size:12px; cursor:pointer;">+ 新目標</button>
     </div>
     <div id="dreamContainer" style="width:100%;"></div>
     <hr style="width:100%; border:0.5px solid #eee; margin:25px 0;">
@@ -168,7 +169,9 @@
         <b style="font-size:18px;">📦 摳比的時光寶盒</b>
         <div id="achievedContainer" style="width:100%; margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;"></div>
     </div>
-    <hr style="width:100%; border:0.5px solid #eee; margin:25px 0;">
+</div>
+
+<div id="shopPage" class="page">
     <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <b style="font-size:18px;">🛍️ 摳比福利社</b>
         <div id="profileEditBtn" style="font-size:12px; color:var(--line-brown); cursor:pointer;">⚙️ 修改喜好</div>
@@ -315,7 +318,8 @@ window.switchPage = function(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.getElementById(pageId).classList.add('active');
-    document.getElementById('btn-' + (pageId === 'recordPage' ? 'record' : 'dream')).classList.add('active');
+    const btnMap = { recordPage: 'btn-record', dreamPage: 'btn-dream', shopPage: 'btn-shop' };
+    document.getElementById(btnMap[pageId]).classList.add('active');
     updateUI();
 };
 
@@ -928,6 +932,12 @@ document.getElementById('profileSaveBtn').addEventListener('click', async () => 
 document.getElementById('profileSkipBtn').addEventListener('click', async () => { await saveProfile(true); loadProducts(); });
 initProfileChips();
 
+// ── 按鈕事件綁定 ──
+document.getElementById('kobiBtn').addEventListener('click', () => window.showFortune());
+document.getElementById('settleGuideBtn').addEventListener('click', () => window.openSettleModal());
+document.getElementById('openRecordModalBtn').addEventListener('click', () => openModal('recordModal'));
+document.getElementById('openDreamModalBtn').addEventListener('click', () => openModal('dreamModal'));
+
 // ── 初始化 ──
 async function init() {
     showLoading(true);
@@ -960,12 +970,7 @@ async function init() {
 
     const params = new URLSearchParams(window.location.search);
     if (params.get('dream') === '1') window.switchPage('dreamPage');
-    else if (params.get('shop') === '1') {
-        window.switchPage('dreamPage');
-        setTimeout(() => {
-            document.getElementById('recommendContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 600);
-    }
+    else if (params.get('shop') === '1') window.switchPage('shopPage');
     else if (params.get('draw') === '1') { window.switchPage('recordPage'); setTimeout(window.showFortune, 500); }
 }
 
