@@ -951,7 +951,8 @@ async function loadProducts() {
 // 換一批商品按鈕
 document.getElementById('refreshProductsBtn').addEventListener('click', () => loadProducts());
 
-// 修改喜好按鈕document.getElementById('profileEditBtn').addEventListener('click', () => {
+// 修改喜好按鈕
+document.getElementById('profileEditBtn').addEventListener('click', () => {
     // 把現有設定填回去
     if (userProfile) {
         ['chipGender', 'chipAge'].forEach(groupId => {
@@ -1014,6 +1015,13 @@ document.getElementById('openDreamModalBtn').addEventListener('click', () => ope
 
 // ── 初始化 ──
 async function init() {
+    // ⚠️ 必須在 LIFF init 之前先記錄 URL 參數，因為 LIFF 可能會改寫網址
+    const params = new URLSearchParams(window.location.search);
+    const targetPage = params.get('dream') === '1' ? 'dreamPage'
+                     : params.get('shop') === '1' ? 'shopPage'
+                     : params.get('draw') === '1' ? 'draw'
+                     : null;
+
     showLoading(true);
     try {
         await liff.init({ liffId: "2010068096-vsSIzIqA" });
@@ -1042,10 +1050,10 @@ async function init() {
     // 載入福利社商品
     loadProducts();
 
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('dream') === '1') window.switchPage('dreamPage');
-    else if (params.get('shop') === '1') window.switchPage('shopPage');
-    else if (params.get('draw') === '1') { window.switchPage('recordPage'); setTimeout(window.showFortune, 500); }
+    // 根據最一開始記錄的參數跳轉
+    if (targetPage === 'dreamPage') window.switchPage('dreamPage');
+    else if (targetPage === 'shopPage') window.switchPage('shopPage');
+    else if (targetPage === 'draw') { window.switchPage('recordPage'); setTimeout(window.showFortune, 500); }
 }
 
 init();
