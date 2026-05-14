@@ -85,7 +85,9 @@
     <div class="history-section">
         <hr style="border:0.5px solid #eee; margin-bottom:20px;">
         <div class="history-section-title">📂 歷史結算紀錄</div>
-        <input class="search-bar" id="historySearch" placeholder="🔍 搜尋關鍵字（類別、備注）" oninput="renderHistory()">
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+            <input class="search-bar" id="historySearch" placeholder="🔍 類別、備註、日期（如 2026-05）" oninput="renderHistory()" style="margin-bottom:0;">
+        </div>
         <div id="historyContainer"></div>
     </div>
 </div>
@@ -129,7 +131,7 @@
     <select id="recordType"><option value="spend">支出 / 購買</option><option value="save">收入 / 存錢</option></select>
     <select id="recordCategory"></select>
     <input type="number" id="recordAmount" placeholder="金額">
-    <textarea id="recordNote" placeholder="備注一下..." rows="2"></textarea>
+    <textarea id="recordNote" placeholder="備註一下..." rows="2"></textarea>
     <button id="addRecordBtn" class="btn-main">存入金庫</button>
     <button onclick="closeModal('recordModal')" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">取消</button>
 </div></div>
@@ -453,35 +455,49 @@ window.addEventListener('click', (e) => {
 });
 
 // ── 歷史紀錄渲染 ──
+let showAllHistory = false;
+const HISTORY_PREVIEW = 3;
+
 window.renderHistory = function() {
     const keyword = (document.getElementById('historySearch').value || '').trim().toLowerCase();
     const container = document.getElementById('historyContainer');
     container.innerHTML = '';
 
     if (!historyPeriods.length) {
-        container.innerHTML = '<div class="no-history">尚無歷史結算紀錄</div>';
+        container.innerHTML = '<div class="no-history">尚未有歷史結算紀錄</div>';
         return;
     }
 
-    historyPeriods.forEach((period, idx) => {
-        // 關鍵字篩選：篩選符合的明細
+    // 篩選每期符合的明細
+    const filtered = historyPeriods.map((period, idx) => {
         const matchedItems = keyword
             ? period.items.filter(item =>
                 item.category.toLowerCase().includes(keyword) ||
-                item.note.toLowerCase().includes(keyword))
+                item.note.toLowerCase().includes(keyword) ||
+                item.date.includes(keyword))
             : period.items;
+        return { period, idx, matchedItems };
+    }).filter(({ matchedItems }) => !keyword || matchedItems.length > 0);
 
-        // 如果有關鍵字但這期完全沒有符合項目，跳過這期
-        if (keyword && !matchedItems.length) return;
+    if (!filtered.length) {
+        container.innerHTML = `<div class="no-history">找不到包含「${keyword}」的紀錄</div>`;
+        return;
+    }
 
+    // 有關鍵字時顯示全部，否則依 showAllHistory 決定
+    const shouldShowAll = keyword || showAllHistory;
+    const toRender = shouldShowAll ? filtered : filtered.slice(0, HISTORY_PREVIEW);
+
+    toRender.forEach(({ period, idx, matchedItems }) => {
         const settledDate = new Date(period.settledAt).toLocaleDateString('zh-TW');
+        const periodNum = historyPeriods.length - idx;
         const card = document.createElement('div');
         card.className = 'period-card';
 
         card.innerHTML = `
             <div class="period-header" id="ph-${idx}">
                 <div>
-                    <div style="font-weight:bold; font-size:14px;">第 ${historyPeriods.length - idx} 期結算</div>
+                    <div style="font-weight:bold; font-size:14px;">第 ${periodNum} 期結算</div>
                     <div class="period-meta">${period.periodStart} ～ ${period.periodEnd}　結算日：${settledDate}</div>
                     <div class="period-badges" style="margin-top:6px;">
                         <span class="badge badge-income">收入 $${period.totalIncome.toLocaleString()}</span>
@@ -503,7 +519,6 @@ window.renderHistory = function() {
                     </div>`).join('') : '<div style="color:#ccc; font-size:13px; padding:10px 0;">沒有符合的紀錄</div>'}
             </div>`;
 
-        // 展開/收合
         card.querySelector(`#ph-${idx}`).addEventListener('click', () => {
             const detail = document.getElementById(`pd-${idx}`);
             const chev = document.getElementById(`chev-${idx}`);
@@ -520,8 +535,16 @@ window.renderHistory = function() {
         container.appendChild(card);
     });
 
-    if (!container.children.length) {
-        container.innerHTML = '<div class="no-history">找不到包含「' + keyword + '」的紀錄</div>';
+    // 「查看更多 / 收起」按鈕
+    if (!keyword && filtered.length > HISTORY_PREVIEW) {
+        const btn = document.createElement('div');
+        btn.style.cssText = "text-align:center; padding:10px; color:var(--line-brown); font-size:13px; cursor:pointer; font-weight:bold;";
+        btn.innerText = showAllHistory ? '▲ 收起' : `▼ 查看更多（共 ${filtered.length} 期）`;
+        btn.addEventListener('click', () => {
+            showAllHistory = !showAllHistory;
+            window.renderHistory();
+        });
+        container.appendChild(btn);
     }
 };
 
