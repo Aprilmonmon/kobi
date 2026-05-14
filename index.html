@@ -4,9 +4,8 @@
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>摳比 KOBI - 夢想金庫完全體 50則版</title>
+    <title>摳比 KOBI - 夢想金庫終極版</title>
     
-    <!-- Firebase 雲端引擎 -->
     <script type="module">
       import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
       import { getFirestore, collection, addDoc, getDocs, query, orderBy, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -32,7 +31,7 @@
     </script>
 
     <style>
-        :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; }
+        :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; --success: #B8E0D2; }
         body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
         .tab-group { display: flex; width: 100%; background: white; border-bottom: 2px solid var(--line-brown); position: sticky; top: 0; z-index: 1000; }
         .tab-btn { flex: 1; padding: 18px 5px; text-align: center; font-weight: bold; cursor: pointer; color: #ccc; transition: 0.3s; font-size: 13px; }
@@ -41,11 +40,15 @@
         .page.active { display: flex !important; }
         .kobi-container { width: 120px; height: 120px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 15px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; }
         .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 15px; }
-        .history-item { background: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px; width: 100%; box-sizing: border-box; border-left: 5px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-size: 14px; user-select: none; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; }
-        .btn-main { width: 100%; padding: 14px; background: var(--primary-blue); color: white; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        .history-item { background: white; padding: 12px 15px; border-radius: 12px; margin-bottom: 8px; width: 100%; box-sizing: border-box; border-left: 5px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .history-item:active { transform: scale(0.98); background: #f0f0f0; }
+        .dream-card { background: white; padding: 15px; border-radius: 18px; border: 1px solid #eee; margin-bottom: 12px; position: relative; overflow: hidden; }
+        .milestone-tag { position: absolute; top: 0; right: 0; background: var(--success); color: white; padding: 4px 10px; font-size: 10px; font-weight: bold; border-bottom-left-radius: 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-content { background: white; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; border: 3px solid var(--line-brown); }
+        .btn-main { width: 100%; padding: 14px; background: var(--primary-blue); color: white; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .btn-cancel { background: none; border: 1px solid #ccc; color: #999; padding: 10px; border-radius: 10px; width: 100%; margin-top: 8px; cursor: pointer; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; outline: none; }
     </style>
 </head>
 <body>
@@ -67,8 +70,8 @@
             <div id="mainBalance" style="font-size:32px; font-weight:bold; color:var(--primary-blue);">$0</div>
         </div>
         <button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆紀錄</button>
-        <div style="font-size: 11px; color: #ccc; margin-top: 10px; text-align: center;">💡 提示：長按紀錄項目即可從雲端刪除</div>
-        <div id="listItems" style="width:100%; margin-top:10px;">資料載入中...</div>
+        <div style="font-size: 11px; color: #9E7E6B; margin-top: 12px; text-align: center; font-weight: bold;">💡 提示：直接點擊紀錄即可從雲端刪除</div>
+        <div id="listItems" style="width:100%; margin-top:10px;"></div>
     </div>
 
     <!-- 2. 夢想金庫分頁 -->
@@ -82,84 +85,64 @@
             <button onclick="openModal('dreamModal')" style="background:var(--line-brown); color:white; border:none; padding:8px 12px; border-radius:10px; font-size:12px;">+ 新目標</button>
         </div>
         <div id="dreamContainer" style="width:100%;"></div>
+        <div id="trashContainer" style="width:100%; margin-top: 20px; opacity: 0.5;"></div>
     </div>
 
-    <!-- 3. 福利社分頁 -->
+    <!-- 3. 福利社 -->
     <div id="shopPage" class="page">
         <div style="font-size:60px; margin: 20px 0;">🎁</div>
         <h3>摳比福利社</h3>
-        <p style="color:#999; font-size:14px; text-align:center;">達成目標後可以換取的獎勵</p>
-        <div style="width:100%; background:white; padding:30px; border-radius:20px; border:2px dashed var(--line-brown); text-align:center; box-sizing: border-box;">
-            <p>目前還沒有獎品上架喔！<br>存到錢再來看看吧！🐹</p>
+        <div style="width:100%; background:white; padding:30px; border-radius:20px; border:2px dashed var(--line-brown); text-align:center;">
+            <p>累積夢想里程碑中...🐹</p>
         </div>
     </div>
 
-    <!-- 4. 運勢分頁 -->
+    <!-- 4. 運勢 -->
     <div id="fortunePage" class="page">
         <div class="kobi-container" style="width:150px; height:150px;" onclick="quickFortune()">
             <img src="kobi-logo.png" alt="KOBI" style="width:80%;">
         </div>
         <h2 style="margin-bottom:10px;">今日摳比開示</h2>
-        <div id="fortunePageText" style="background:white; padding:25px; border-radius:20px; border:2px solid var(--primary-blue); width:100%; box-sizing:border-box; line-height:1.8; text-align:center; font-weight: bold;">
-            點擊上方摳比看運勢！
+        <div id="fortunePageText" style="background:white; padding:25px; border-radius:20px; border:2px solid var(--primary-blue); width:100%; box-sizing:border-box; text-align:center; font-weight: bold;">
+            點擊摳比抽一張！
         </div>
-        <button onclick="quickFortune()" class="btn-main" style="margin-top:20px;">再抽一張</button>
+        <button onclick="quickFortune()" class="btn-main" style="margin-top:20px;">再抽一次</button>
     </div>
 
-    <!-- 彈窗系統 -->
+    <!-- 彈窗 -->
     <div id="commonModal" class="modal"><div class="modal-content">
         <div id="modalIcon" style="font-size:50px; margin-bottom:10px;">🐹</div>
         <div id="modalTitle" style="font-weight:bold; color:var(--primary-blue); margin-bottom:10px; font-size: 20px;"></div>
-        <div id="modalText" style="line-height:1.6; margin-bottom:20px; white-space:pre-line;"></div>
+        <div id="modalText" style="line-height:1.6; margin-bottom:20px;"></div>
         <button id="modalConfirmBtn" class="btn-main">確認</button>
-        <button onclick="closeModal('commonModal')" style="background:none; border:none; color:#ccc; margin-top:10px;">關閉</button>
+        <button id="modalCancelBtn" onclick="closeModal('commonModal')" class="btn-cancel">取消</button>
     </div></div>
 
     <div id="recordModal" class="modal"><div class="modal-content">
-        <div style="font-size:40px;">💰</div>
         <h3>新增紀錄</h3>
         <input type="date" id="recordDate">
         <select id="recordType" onchange="updateCategories()"><option value="spend">支出</option><option value="save">收入</option></select>
         <select id="recordCategory"></select>
         <input type="number" id="recordAmount" placeholder="金額">
         <textarea id="recordNote" placeholder="備註..." rows="2"></textarea>
-        <button onclick="addRecordToCloud()" class="btn-main">同步雲端</button>
-        <button onclick="closeModal('recordModal')" style="background:none; border:none; color:#ccc; margin-top:10px;">取消</button>
+        <button onclick="addRecordToCloud()" class="btn-main">確認新增</button>
+        <button onclick="closeModal('recordModal')" class="btn-cancel">返回</button>
     </div></div>
 
     <div id="dreamModal" class="modal"><div class="modal-content">
-        <div style="font-size:40px;">✨</div>
-        <h3>設定新夢想</h3>
-        <input type="text" id="dreamName" placeholder="想買什麼？">
-        <input type="number" id="dreamTarget" placeholder="金額">
+        <h3>設定夢想目標</h3>
+        <input type="text" id="dreamName" placeholder="目標名稱">
+        <input type="number" id="dreamTarget" placeholder="目標金額">
         <button onclick="addDream()" class="btn-main">開始累積</button>
-        <button onclick="closeModal('dreamModal')" style="background:none; border:none; color:#ccc; margin-top:10px;">取消</button>
+        <button onclick="closeModal('dreamModal')" class="btn-cancel">返回</button>
     </div></div>
 
     <script>
-        // 恢復完整 50 則運勢
-        const fortunes = [
-            "財神爺今天住你家！☕\n🌈 幸運色：暖陽黃", "今日財運爆棚。✨\n🌈 幸運色：優雅正米色", "摳比永遠支持你！🐹\n🌈 幸運色：摳比藍", 
-            "省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠", "理財是為了自由。🕊️\n🌈 幸運色：純淨白", "夢想金庫長大中！📈\n🌈 幸運色：玫瑰金",
-            "錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅", "控制物欲控制人生。🎮\n🌈 幸運色：經典黑", "你是省錢高手！👏\n🌈 幸運色：珊瑚橘",
-            "記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅", "絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金", "小錢累積成大夢。🌊\n🌈 幸運色：天藍色",
-            "好事即將發生。🌈\n🌈 幸運色：彩虹色", "今天會有意外小財。💰\n🌈 幸運色：檸檬黃", "投資自己是最棒的。📚\n🌈 幸運色：森林綠",
-            "減少衝動，增加積蓄。🧘\n🌈 幸運色：石墨灰", "財富來自日常累積。🕰️\n🌈 幸運色：燕麥色", "保持心情愉快財運自來。😊\n🌈 幸運色：薰衣草紫",
-            "你的夢想值得這份堅持。💪\n🌈 幸運色：寶石藍", "今天適合整理錢包。👛\n🌈 幸運色：大地棕", "每一筆支出都是選擇。⚖️\n🌈 幸運色：薄荷綠",
-            "財富自由不是夢。☀️\n🌈 幸運色：香檳金", "專注於你的長期目標。🎯\n🌈 幸運色：海軍藍", "感謝今天的努力。🌙\n🌈 幸運色：午夜黑",
-            "明天會比今天更有錢！💎\n🌈 幸運色：閃耀銀", "節流也要記得開源。💸\n🌈 幸運色：螢光綠", "你是金錢的主人。👑\n🌈 幸運色：紫羅蘭",
-            "摳比說：今天適合存錢。🐹\n🌈 幸運色：淺草綠", "遠離不必要的消費。🚫\n🌈 幸運色：警戒紅", "記得獎勵努力的自己。🍦\n🌈 幸運色：奶油白",
-            "夢想就在不遠處。🌅\n🌈 幸運色：橙花色", "智慧消費是種藝術。🎨\n🌈 幸運色：松石綠", "今天財運中規中矩。⚖️\n🌈 幸運色：水泥灰",
-            "適合投資理財知識。📖\n🌈 幸運色：書卷棕", "錢包滿滿心情好好。🥳\n🌈 幸運色：蜜桃粉", "少買一件垃圾多存一分。灰\n🌈 幸運色：炭灰色",
-            "堅持記帳 30 天會有奇蹟。✨\n🌈 幸運色：星空紫", "你是最有潛力的富翁。💰\n🌈 幸運色：琥珀黃", "今天會有貴人相助。🤝\n🌈 幸運色：孔雀藍",
-            "對錢好一點，它會愛你。❤️\n🌈 幸運色：深緋紅", "你的金庫在微笑。🙂\n🌈 幸運色：暖橘色", "理智戰勝物欲。🧠\n🌈 幸運色：冰川藍",
-            "生活簡約，心靈豐富。草\n🌈 幸運色：橄欖綠", "今天適合規劃未來。📅\n🌈 幸運色：鈦金灰", "相信累積的力量。🐜\n🌈 幸運色：磚紅色",
-            "財富正在緩緩流向你。🌀\n🌈 幸運色：象牙白", "每一塊錢都有它的靈魂。👻\n🌈 幸運色：月光銀", "你是理財小天才。🧠\n🌈 幸運色：寶石紅",
-            "今天適合在家休息省錢。🏡\n🌈 幸運色：米灰色", "夢想需要金錢支撐。🪜\n🌈 幸運色：焦糖色"
-        ];
+        const fortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃", "今日財運爆棚。✨\n🌈 幸運色：優雅正米色", "摳比永遠支持你！🐹\n🌈 幸運色：摳比藍", "省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠", "理財是為了自由。🕊️\n🌈 幸運色：純淨白", "夢想金庫長大中！📈\n🌈 幸運色：玫瑰金", "錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅", "控制物欲控制人生。🎮\n🌈 幸運色：經典黑", "你是省錢高手！👏\n🌈 幸運色：珊瑚橘", "記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅", "絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金", "小錢累積成大夢。🌊\n🌈 幸運色：天藍色", "好事即將發生。🌈\n🌈 幸運色：彩虹色", "今天會有意外小財。💰\n🌈 幸運色：檸檬黃", "投資自己是最棒的。📚\n🌈 幸運色：森林綠", "減少衝動，增加積蓄。🧘\n🌈 幸運色：石墨灰", "財富來自日常累積。🕰️\n🌈 幸運色：燕麥色", "保持心情愉快財運自來。😊\n🌈 幸運色：薰衣草紫", "你的夢想值得這份堅持。💪\n🌈 幸運色：寶石藍", "今天適合整理錢包。👛\n🌈 幸運色：大地棕", "每一筆支出都是選擇。⚖️\n🌈 幸運色：薄荷綠", "財富自由不是夢。☀️\n🌈 幸運色：香檳金", "專注於你的長期目標。🎯\n🌈 幸運色：海軍藍", "感謝今天的努力。🌙\n🌈 幸運色：午夜黑", "明天會比今天更有錢！💎\n🌈 幸運色：閃耀銀", "節流也要記得開源。💸\n🌈 幸運色：螢光綠", "你是金錢的主人。👑\n🌈 幸運色：紫羅蘭", "摳比說：今天適合存錢。🐹\n🌈 幸運色：淺草綠", "遠離不必要的消費。🚫\n🌈 幸運色：警戒紅", "記得獎勵努力的自己。🍦\n🌈 幸運色：奶油白", "夢想就在不遠處。🌅\n🌈 幸運色：橙花色", "智慧消費是種藝術。🎨\n🌈 幸運色：松石綠", "今天財運中規中矩。⚖️\n🌈 幸運色：水泥灰", "適合投資理財知識。📖\n🌈 幸運色：書卷棕", "錢包滿滿心情好好。🥳\n🌈 幸運色：蜜桃粉", "少買一件垃圾多存一分。\n🌈 幸運色：炭灰色", "堅持記帳 30 天會有奇蹟。✨\n🌈 幸運色：星空紫", "你是最有潛力的富翁。💰\n🌈 幸運色：琥珀黃", "今天會有貴人相助。🤝\n🌈 幸運色：孔雀藍", "對錢好一點，它會愛你。❤️\n🌈 幸運色：深緋紅", "你的金庫在微笑。🙂\n🌈 幸運色：暖橘色", "理智戰勝物欲。🧠\n🌈 幸運色：冰川藍", "生活簡約，心靈豐富。\n🌈 幸運色：橄欖綠", "今天適合規劃未來。📅\n🌈 幸運色：鈦金灰", "相信累積的力量。🐜\n🌈 幸運色：磚紅色", "財富正在緩緩流向你。🌀\n🌈 幸運色：象牙白", "每一塊錢都有它的靈魂。👻\n🌈 幸運色：月光銀", "你是理財小天才。🧠\n🌈 幸運色：寶石紅", "今天適合在家休息省錢。🏡\n🌈 幸運色：米灰色", "夢想需要金錢支撐。🪜\n🌈 幸運色：焦糖色"];
 
         let records = [];
         let dreams = JSON.parse(localStorage.getItem('kobiDreams') || '[]');
+        let trash = JSON.parse(localStorage.getItem('kobiTrash') || '[]');
         let categories = { save: ["薪水", "獎金", "投資", "其他"], spend: ["吃喝費", "治裝費", "交通費", "玩耍費", "其他"] };
 
         function switchPage(pageId) {
@@ -170,28 +153,24 @@
         }
 
         async function fetchRecordsFromCloud() {
-            try {
-                const q = window.fs.query(window.fs.collection(window.db, "records"), window.fs.orderBy("timestamp", "desc"));
-                const querySnapshot = await window.fs.getDocs(q);
-                records = [];
-                querySnapshot.forEach((docSnap) => { records.push({ id: docSnap.id, ...docSnap.data() }); });
-                updateUI();
-            } catch (e) { document.getElementById('listItems').innerText = "連線異常"; }
+            const q = window.fs.query(window.fs.collection(window.db, "records"), window.fs.orderBy("timestamp", "desc"));
+            const querySnapshot = await window.fs.getDocs(q);
+            records = [];
+            querySnapshot.forEach((doc) => records.push({ id: doc.id, ...doc.data() }));
+            updateUI();
         }
 
         async function addRecordToCloud() {
             const amount = parseFloat(document.getElementById('recordAmount').value);
             const date = document.getElementById('recordDate').value;
-            if (!amount || !date) return alert("資料沒填完喔！");
-            const newRecord = {
+            if (!amount || !date) return alert("資料不完整");
+            await window.fs.addDoc(window.fs.collection(window.db, "records"), {
                 amount, date, timestamp: new Date().getTime(),
                 type: document.getElementById('recordType').value,
                 category: document.getElementById('recordCategory').value,
                 note: document.getElementById('recordNote').value
-            };
-            await window.fs.addDoc(window.fs.collection(window.db, "records"), newRecord);
+            });
             closeModal('recordModal');
-            showPop("💰", "同步成功！", "這一筆已經進到雲端存摺囉。");
             fetchRecordsFromCloud();
         }
 
@@ -200,37 +179,66 @@
             document.getElementById('mainBalance').innerText = `$${total.toLocaleString()}`;
             document.getElementById('dreamFundTotal').innerText = `$${total.toLocaleString()}`;
             
-            const list = document.getElementById('listItems');
-            list.innerHTML = records.map(r => `
-                <div class="history-item" 
-                    style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'};"
-                    ontouchstart="startPress('${r.id}')" ontouchend="endPress()"
-                    onmousedown="startPress('${r.id}')" onmouseup="endPress()">
+            document.getElementById('listItems').innerHTML = records.map(r => `
+                <div class="history-item" onclick="confirmDelete('${r.id}')" style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'};">
                     <div><b>${r.category}</b> <small>${r.date}</small></div>
                     <b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">${r.type==='save'?'+':'-'}${r.amount.toLocaleString()}</b>
                 </div>
-            `).join('') || '<div style="color:#ccc; text-align:center;">尚無紀錄</div>';
+            `).join('') || '<div style="color:#ccc; text-align:center;">目前沒有紀錄</div>';
             
-            const dc = document.getElementById('dreamContainer');
-            dc.innerHTML = dreams.map(d => {
-                let percent = Math.min((total / d.target) * 100, 100).toFixed(1);
-                return `<div style="background:white; padding:15px; border-radius:15px; border:1px solid #ddd; margin-bottom:10px;">
-                    <b>${d.name}</b> ($${d.target.toLocaleString()})
-                    <div style="background:#eee; height:10px; border-radius:5px; margin:10px 0;"><div style="background:var(--primary-blue); height:100%; width:${percent}%; border-radius:5px;"></div></div>
-                </div>`;
-            }).join('');
+            renderDreams(total);
         }
 
-        let pressTimer;
-        function startPress(id) { pressTimer = setTimeout(() => confirmDelete(id), 1000); }
-        function endPress() { clearTimeout(pressTimer); }
+        function renderDreams(total) {
+            const dc = document.getElementById('dreamContainer');
+            dc.innerHTML = dreams.map((d, index) => {
+                let percent = Math.min((total / d.target) * 100, 100).toFixed(1);
+                let isDone = percent >= 100;
+                return `
+                <div class="dream-card" onclick="askDeleteDream(${index})">
+                    ${isDone ? '<div class="milestone-tag">MILESTONE 達成!</div>' : ''}
+                    <b>${d.name}</b> <small>目標 $${d.target.toLocaleString()}</small>
+                    <div style="background:#eee; height:12px; border-radius:6px; margin:10px 0; border:1px solid #ddd;">
+                        <div style="background:${isDone?'var(--success)':'var(--primary-blue)'}; height:100%; width:${percent}%; border-radius:6px; transition:1s;"></div>
+                    </div>
+                    <div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}%</div>
+                </div>`;
+            }).join('');
+
+            const tc = document.getElementById('trashContainer');
+            tc.innerHTML = trash.length ? '<p style="font-size:12px;">已刪除的夢想 (點擊復原):</p>' + trash.map((t, index) => `
+                <button onclick="restoreDream(${index})" style="background:#eee; border:none; padding:5px 10px; border-radius:10px; margin-right:5px; margin-bottom:5px; font-size:12px;">↺ ${t.name}</button>
+            `).join('') : '';
+        }
 
         function confirmDelete(id) {
-            showPop("⚠️", "要刪除嗎？", "刪掉後雲端資料庫也會消失喔！", async () => {
+            showPop("🗑️", "刪除紀錄", "確定要從雲端刪除這筆收支嗎？", async () => {
                 await window.fs.deleteDoc(window.fs.doc(window.db, "records", id));
                 closeModal('commonModal');
                 fetchRecordsFromCloud();
             });
+        }
+
+        function askDeleteDream(index) {
+            showPop("☁️", "管理夢想", `要刪除「${dreams[index].name}」嗎？`, () => {
+                trash.push(dreams[index]);
+                dreams.splice(index, 1);
+                saveDreams();
+                closeModal('commonModal');
+                updateUI();
+            });
+        }
+
+        function restoreDream(index) {
+            dreams.push(trash[index]);
+            trash.splice(index, 1);
+            saveDreams();
+            updateUI();
+        }
+
+        function saveDreams() {
+            localStorage.setItem('kobiDreams', JSON.stringify(dreams));
+            localStorage.setItem('kobiTrash', JSON.stringify(trash));
         }
 
         function quickFortune() {
@@ -244,14 +252,12 @@
             document.getElementById('modalTitle').innerText = title;
             document.getElementById('modalText').innerText = text;
             const btn = document.getElementById('modalConfirmBtn');
+            btn.style.display = 'block';
             btn.onclick = action || (() => closeModal('commonModal'));
             openModal('commonModal');
         }
 
-        function openModal(id) { 
-            document.getElementById(id).style.display = 'flex'; 
-            if(id==='recordModal'){ document.getElementById('recordDate').valueAsDate=new Date(); updateCategories(); }
-        }
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function updateCategories() {
             const type = document.getElementById('recordType').value;
@@ -260,7 +266,7 @@
         function addDream() {
             const name = document.getElementById('dreamName').value;
             const target = parseFloat(document.getElementById('dreamTarget').value);
-            if (name && target) { dreams.push({ name, target }); localStorage.setItem('kobiDreams', JSON.stringify(dreams)); closeModal('dreamModal'); updateUI(); }
+            if (name && target) { dreams.push({ name, target }); saveDreams(); closeModal('dreamModal'); updateUI(); }
         }
     </script>
 </body>
