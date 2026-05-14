@@ -193,7 +193,11 @@
 
 <div id="recordModal" class="modal"><div class="modal-content">
     <h3>💰 新增紀錄</h3>
-    <input type="date" id="recordDate">
+    <div style="display:flex; gap:6px; margin:6px 0;">
+        <select id="recordYear" style="flex:2; padding:10px 6px; font-size:14px; margin:0;"></select>
+        <select id="recordMonth" style="flex:1.5; padding:10px 6px; font-size:14px; margin:0;"></select>
+        <select id="recordDay" style="flex:1.5; padding:10px 6px; font-size:14px; margin:0;"></select>
+    </div>
     <select id="recordType"><option value="spend">支出 / 購買</option><option value="save">收入 / 存錢</option></select>
     <select id="recordCategory"></select>
     <input type="number" id="recordAmount" placeholder="金額">
@@ -263,8 +267,43 @@ function showError(msg) {
 function openModal(id) {
     document.getElementById(id).style.display = 'flex';
     if (id === 'recordModal') {
-        document.getElementById('recordDate').valueAsDate = new Date();
+        initDateSelects();
         updateCategories();
+    }
+}
+
+function initDateSelects() {
+    const now = new Date();
+    const y = now.getFullYear(), m = now.getMonth() + 1, d = now.getDate();
+
+    const yEl = document.getElementById('recordYear');
+    const mEl = document.getElementById('recordMonth');
+    const dEl = document.getElementById('recordDay');
+
+    // 年（近3年）
+    yEl.innerHTML = '';
+    for (let i = y; i >= y - 2; i--) {
+        yEl.innerHTML += `<option value="${i}" ${i===y?'selected':''}>${i}年</option>`;
+    }
+    // 月
+    mEl.innerHTML = '';
+    for (let i = 1; i <= 12; i++) {
+        mEl.innerHTML += `<option value="${String(i).padStart(2,'0')}" ${i===m?'selected':''}>${i}月</option>`;
+    }
+    // 日
+    updateDayOptions(y, m, d);
+
+    yEl.addEventListener('change', () => updateDayOptions(parseInt(yEl.value), parseInt(mEl.value)));
+    mEl.addEventListener('change', () => updateDayOptions(parseInt(yEl.value), parseInt(mEl.value)));
+}
+
+function updateDayOptions(year, month, selectedDay = null) {
+    const dEl = document.getElementById('recordDay');
+    const maxDay = new Date(year, month, 0).getDate();
+    const cur = selectedDay || parseInt(dEl.value) || new Date().getDate();
+    dEl.innerHTML = '';
+    for (let i = 1; i <= maxDay; i++) {
+        dEl.innerHTML += `<option value="${String(i).padStart(2,'0')}" ${i===Math.min(cur,maxDay)?'selected':''}>${i}日</option>`;
     }
 }
 function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -325,7 +364,10 @@ async function saveDreamFund() {
 
 // ── 新增紀錄 ──
 async function addRecord() {
-    const date = document.getElementById('recordDate').value;
+    const year = document.getElementById('recordYear').value;
+    const month = document.getElementById('recordMonth').value;
+    const day = document.getElementById('recordDay').value;
+    const date = `${year}-${month}-${day}`;
     const type = document.getElementById('recordType').value;
     const category = document.getElementById('recordCategory').value;
     const amount = parseFloat(document.getElementById('recordAmount').value);
