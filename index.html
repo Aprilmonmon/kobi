@@ -5,6 +5,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>摳比 KOBI - 夢想金庫</title>
+    <!-- Firebase 雲端連線腳本 -->
+<script type="module">
+  // 引入 Firebase 核心與資料庫模組
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  // 這是你剛剛在 Firebase 拿到的專屬通行證
+  const firebaseConfig = {
+    apiKey: "AIzaSyCP0ytf38A-qz0ocTZVX2IgJNfrHscDC-4",
+    authDomain: "kobi-dream-vault.firebaseapp.com",
+    projectId: "kobi-dream-vault",
+    storageBucket: "kobi-dream-vault.firebasestorage.app",
+    messagingSenderId: "959095807484",
+    appId: "1:959095807484:web:16ea95cb313e3f0f036679",
+    measurementId: "G-D1WRCDRB1F"
+  };
+
+  // 初始化連線並將資料庫權限 (db) 交給 window，讓其他 function 也能用
+  const app = initializeApp(firebaseConfig);
+  window.db = getFirestore(app);
+  
+  console.log("🐹 摳比：雲端金庫連線成功！");
+</script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; }
@@ -114,7 +137,7 @@
     <div id="dreamModal" class="modal"><div class="modal-content">
         <h3>✨ 設定新夢想</h3>
         <input type="text" id="dreamName" placeholder="夢想名稱"><input type="number" id="dreamTarget" placeholder="目標金額">
-        <button onclick="addDream()" class="btn-main">開始計畫</button><button onclick="closeModal('dreamModal')" style="background:none; border:none; color:#999; margin-top:10px;">取消</button>
+        <button onclick="addRecordToCloud()" class="btn-main">開始計畫</button><button onclick="closeModal('dreamModal')" style="background:none; border:none; color:#999; margin-top:10px;">取消</button>
     </div></div>
 
     <div id="fortuneModal" class="modal"><div class="modal-content"><div style="font-size:40px;">🐹</div><div style="color:var(--primary-blue); font-weight:bold;">摳比今日開示</div><div id="fortuneText" style="line-height:1.7; margin:15px 0; white-space:pre-line;"></div><button onclick="closeModal('fortuneModal')" class="btn-main">好喔！</button></div></div>
@@ -131,6 +154,26 @@
             save: ["薪水", "獎金", "投資", "摳比紅包", "其他"],
             spend: ["吃喝費", "治裝費", "交通費", "網路手機", "玩耍費", "金融保險", "學習成長", "醫療", "其他"]
         };
+
+       <!-- Firebase 雲端連線 -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCP0ytf38A-qz0ocTZVX2IgJNfrHscDC-4",
+    authDomain: "kobi-dream-vault.firebaseapp.com",
+    projectId: "kobi-dream-vault",
+    storageBucket: "kobi-dream-vault.firebasestorage.app",
+    messagingSenderId: "959095807484",
+    appId: "1:959095807484:web:16ea95cb313e3f0f036679",
+    measurementId: "G-D1WRCDRB1F"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  window.db = getFirestore(app);
+  console.log("🐹 摳比：雲端金庫連線成功！");
+</script>
 
         function switchPage(pageId) {
             document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
