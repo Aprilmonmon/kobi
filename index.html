@@ -5,517 +5,469 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>摳比 KOBI - 夢想金庫</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
-    <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCP0ytf38A-qz0ocTZVX2IgJNfrHscDC-4",
-            authDomain: "kobi-dream-vault.firebaseapp.com",
-            projectId: "kobi-dream-vault",
-            storageBucket: "kobi-dream-vault.firebasestorage.app",
-            messagingSenderId: "959095807484",
-            appId: "1:959095807484:web:16ea95cb313e3f0f036679",
-            measurementId: "G-D1WRCDRB1F"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-
-        // ── 全域狀態 ──
-        let userId = null;
-        let records = [];
-        let dreams = [];
-        let dreamFund = 0;
-        let achievedDreams = [];
-
-        // ── Firestore 路徑輔助 ──
-        function userDoc(path) {
-            return doc(db, "users", userId, ...path.split("/"));
-        }
-        function userCol(path) {
-            return collection(db, "users", userId, ...path.split("/"));
-        }
-
-        // ── 從 Firestore 讀取所有資料 ──
-        async function loadAllData() {
-            showLoading(true);
-            try {
-                // 讀取用戶主文件（dreamFund）
-                const userSnap = await getDoc(doc(db, "users", userId));
-                if (userSnap.exists()) {
-                    dreamFund = userSnap.data().dreamFund || 0;
-                } else {
-                    await setDoc(doc(db, "users", userId), { dreamFund: 0 });
-                }
-
-                // 讀取 records
-                const recSnap = await getDocs(userCol("records"));
-                records = [];
-                recSnap.forEach(d => records.push({ id: d.id, ...d.data() }));
-
-                // 讀取 dreams
-                const drmSnap = await getDocs(userCol("dreams"));
-                dreams = [];
-                drmSnap.forEach(d => dreams.push({ id: d.id, ...d.data() }));
-
-                // 讀取 achieved
-                const achSnap = await getDocs(userCol("achieved"));
-                achievedDreams = [];
-                achSnap.forEach(d => achievedDreams.push({ id: d.id, ...d.data() }));
-
-            } catch (e) {
-                console.error("載入資料失敗", e);
-                showError("載入資料失敗：" + e.message + " (code: " + (e.code || "unknown") + ")");
-            }
-            showLoading(false);
-            updateUI();
-        }
-
-        // ── 儲存 dreamFund ──
-        async function saveDreamFund() {
-            await setDoc(doc(db, "users", userId), { dreamFund }, { merge: true });
-        }
-
-        // ── 新增紀錄 ──
-        window.addRecord = async function() {
-            const date = document.getElementById('recordDate').value;
-            const type = document.getElementById('recordType').value;
-            const category = document.getElementById('recordCategory').value;
-            const amount = parseFloat(document.getElementById('recordAmount').value);
-            const note = document.getElementById('recordNote').value;
-            if (!date || !amount) return;
-
-            showLoading(true);
-            try {
-                const docRef = await addDoc(userCol("records"), { date, type, category, amount, note });
-                records.push({ id: docRef.id, date, type, category, amount, note });
-                closeModal('recordModal');
-                updateUI();
-            } catch(e) { showError("新增失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
-            showLoading(false);
-        }
-
-        // ── 刪除紀錄 ──
-        let deleteId = null;
-        window.deleteRecord = function(id) {
-            deleteId = id;
-            document.getElementById('fortuneText').innerText = "🐹 摳比問你：確定要刪除這筆紀錄嗎？";
-            const modalBtn = document.querySelector('#fortuneModal .btn-main');
-            modalBtn.innerText = "確定刪除";
-            modalBtn.onclick = executeDelete;
-
-            let cancelBtn = document.getElementById('cancelDeleteBtn');
-            if (!cancelBtn) {
-                cancelBtn = document.createElement('button');
-                cancelBtn.id = 'cancelDeleteBtn';
-                cancelBtn.innerText = "先不要";
-                cancelBtn.style = "background:none; border:none; color:#999; margin-top:10px; cursor:pointer; width:100%;";
-                cancelBtn.onclick = () => {
-                    modalBtn.innerText = "好喔！";
-                    modalBtn.onclick = () => closeModal('fortuneModal');
-                    closeModal('fortuneModal');
-                };
-                modalBtn.parentNode.appendChild(cancelBtn);
-            } else {
-                cancelBtn.style.display = 'block';
-            }
-            openModal('fortuneModal');
-        }
-
-        async function executeDelete() {
-            showLoading(true);
-            try {
-                await deleteDoc(userDoc(`records/${deleteId}`));
-                records = records.filter(r => r.id !== deleteId);
-                closeModal('fortuneModal');
-                const modalBtn = document.querySelector('#fortuneModal .btn-main');
-                modalBtn.innerText = "好喔！";
-                modalBtn.onclick = () => closeModal('fortuneModal');
-                updateUI();
-            } catch(e) { showError("刪除失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
-            showLoading(false);
-        }
-
-        // ── 結算 ──
-        window.openSettleModal = function() {
-            const currentTotal = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
-            document.getElementById('settlePreview').innerText = `$${currentTotal.toLocaleString()}`;
-            document.getElementById('transferAmount').value = currentTotal > 0 ? currentTotal : 0;
-            openModal('settleModal');
-        }
-
-        window.executeSettle = async function() {
-            const transfer = parseFloat(document.getElementById('transferAmount').value) || 0;
-            showLoading(true);
-            try {
-                // 刪除所有 records
-                const batch = records.map(r => deleteDoc(userDoc(`records/${r.id}`)));
-                await Promise.all(batch);
-                records = [];
-
-                // 更新 dreamFund
-                dreamFund += transfer;
-                await saveDreamFund();
-
-                closeModal('settleModal');
-                updateUI();
-                const successMsg = `🎉 結算成功！\n摳比已幫你將 $${transfer.toLocaleString()} \n存入夢想金庫囉！\n新的週期也要加油喔！🐹`;
-                document.getElementById('fortuneText').innerText = successMsg;
-                const modalBtn = document.querySelector('#fortuneModal .btn-main');
-                modalBtn.innerText = "收到！(๑•̀ㅂ•́)و";
-                modalBtn.onclick = () => closeModal('fortuneModal');
-                if(document.getElementById('cancelDeleteBtn')) document.getElementById('cancelDeleteBtn').style.display = 'none';
-                openModal('fortuneModal');
-            } catch(e) { showError("結算失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
-            showLoading(false);
-        }
-
-        // ── 新增夢想 ──
-        window.addDream = async function() {
-            const name = document.getElementById('dreamName').value;
-            const target = parseFloat(document.getElementById('dreamTarget').value);
-            if (!name || !target) return;
-
-            showLoading(true);
-            try {
-                const docRef = await addDoc(userCol("dreams"), { name, target });
-                dreams.push({ id: docRef.id, name, target });
-                closeModal('dreamModal');
-                updateUI();
-            } catch(e) { showError("新增夢想失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
-            showLoading(false);
-        }
-
-        // ── 刪除夢想 ──
-        window.deleteDream = async function(event, id) {
-            event.stopPropagation();
-            const dream = dreams.find(d => d.id === id);
-            if (!dream) return;
-            if (confirm(`🐹 摳比問你：確定要取消【${dream.name}】這個夢想嗎？`)) {
-                showLoading(true);
-                try {
-                    await deleteDoc(userDoc(`dreams/${id}`));
-                    dreams = dreams.filter(d => d.id !== id);
-                    updateUI();
-                } catch(e) { showError("刪除夢想失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
-                showLoading(false);
-            }
-        }
-
-        // ── 實現夢想 ──
-        window.fulfillDream = async function(id) {
-            const dream = dreams.find(d => d.id === id);
-            if (!dream) return;
-
-            if (dreamFund < dream.target) {
-                document.getElementById('fortuneText').innerText = "🐹 摳比提醒：\n基金還不夠實現這個夢想喔！\n再加油存一點點！";
-                const modalBtn = document.querySelector('#fortuneModal .btn-main');
-                modalBtn.innerText = "好喔！";
-                modalBtn.onclick = () => closeModal('fortuneModal');
-                openModal('fortuneModal');
-                return;
-            }
-
-            showLoading(true);
-            try {
-                dreamFund -= dream.target;
-                const achieved = { name: dream.name, amount: dream.target, date: new Date().toLocaleDateString() };
-                const achRef = await addDoc(userCol("achieved"), achieved);
-                achievedDreams.push({ id: achRef.id, ...achieved });
-                await deleteDoc(userDoc(`dreams/${id}`));
-                dreams = dreams.filter(d => d.id !== id);
-                await saveDreamFund();
-                updateUI();
-
-                document.getElementById('fortuneText').innerText = `✨ 夢想實現！ ✨\n\n【${dream.name}】\n已成功解鎖並存入時光寶盒！\n摳比為你感到驕傲！🐹`;
-                const modalBtn = document.querySelector('#fortuneModal .btn-main');
-                modalBtn.innerText = "太棒了！";
-                modalBtn.onclick = () => closeModal('fortuneModal');
-                openModal('fortuneModal');
-            } catch(e) { showError("實現夢想失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
-            showLoading(false);
-        }
-
-        // ── Loading 遮罩 ──
-        function showLoading(show) {
-            document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
-        }
-
-        // ── 錯誤顯示 ──
-        function showError(msg) {
-            const el = document.getElementById('errorBanner');
-            el.innerText = "⚠️ " + msg;
-            el.style.display = 'block';
-            setTimeout(() => { el.style.display = 'none'; }, 8000);
-        }
-
-        // ── 初始化 ──
-        window.addEventListener('load', async () => {
-            // 點擊 modal 背景關閉
-            window.onclick = function(event) {
-                if (event.target.classList.contains('modal')) {
-                    const modalId = event.target.id;
-                    if (modalId === 'fortuneModal') {
-                        const modalBtn = document.querySelector('#fortuneModal .btn-main');
-                        modalBtn.innerText = "好喔！";
-                        modalBtn.onclick = () => closeModal('fortuneModal');
-                        if(document.getElementById('cancelDeleteBtn')) document.getElementById('cancelDeleteBtn').style.display = 'none';
-                    }
-                    closeModal(modalId);
-                }
-            };
-
-            showLoading(true);
-            try {
-                await liff.init({ liffId: "2010068096-vsSIzIqA" });
-                if (liff.isLoggedIn()) {
-                    const profile = await liff.getProfile();
-                    userId = profile.userId;
-                } else {
-                    liff.login();
-                    return;
-                }
-            } catch(e) {
-                // LIFF 初始化失敗（本地測試）時，用預設 ID
-                console.log("LIFF 初始化失敗，使用測試模式", e);
-                showError("LIFF 初始化失敗：" + e.message);
-                userId = "test-user-local";
-            }
-
-            await loadAllData();
-
-            const params = new URLSearchParams(window.location.search);
-            if (params.get('dream') === '1') switchPage('dreamPage');
-            else if (params.get('draw') === '1') { switchPage('recordPage'); setTimeout(showFortune, 500); }
-        });
-
-        // ── 把非同步相關函式掛到 window（供 HTML onclick 使用）──
-        window.loadAllData = loadAllData;
-
-    </script>
-
     <style>
         :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; }
         body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        
         .tab-group { display: flex; width: 100%; background: white; border-bottom: 2px solid var(--line-brown); position: sticky; top: 0; z-index: 1000; }
         .tab-btn { flex: 1; padding: 18px 10px; text-align: center; font-weight: bold; cursor: pointer; color: #ccc; transition: 0.3s; }
         .tab-btn.active { color: var(--line-brown); border-bottom: 4px solid var(--line-brown); }
-
         .page { display: none; width: 90%; max-width: 350px; padding: 20px 0; flex-direction: column; align-items: center; }
         .page.active { display: flex !important; }
-
         .kobi-container { width: 120px; height: 120px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 15px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; }
-        
-        .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 15px; position: relative; }
+        .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 15px; }
         .settle-guide { width: 100%; background: #FFF4E0; border: 1px dashed #FFB7B2; border-radius: 12px; padding: 10px; margin-bottom: 20px; font-size: 13px; color: #9E7E6B; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        
-        .history-item { background: white; padding: 10px 15px; border-radius: 12px; margin-bottom: 8px; width: 100%; box-sizing: border-box; border-left: 5px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-size: 14px; }
-        .dream-card { background: white; border-radius: 15px; padding: 15px; width: 100%; border: 1px solid #ddd; margin-bottom: 12px; box-sizing: border-box; }
+        .history-item { background: white; padding: 10px 15px; border-radius: 12px; margin-bottom: 8px; width: 100%; box-sizing: border-box; border-left: 5px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-size: 14px; cursor: pointer; }
+        .dream-card { background: white; border-radius: 15px; padding: 15px; width: 100%; border: 1px solid #ddd; margin-bottom: 12px; box-sizing: border-box; cursor: pointer; position: relative; }
         .progress-bar { background: #eee; height: 14px; border-radius: 7px; margin: 12px 0; overflow: hidden; }
         .progress-fill { background: var(--primary-blue); height: 100%; width: 0%; transition: 0.8s; }
-        
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; max-height: 85vh; overflow-y: auto; }
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         .btn-main { width: 100%; padding: 14px; background: var(--primary-blue); color: white; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
-
-        /* Loading 遮罩 */
-        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; gap: 12px; }
+        #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; gap: 12px; }
         .loading-spinner { width: 48px; height: 48px; border: 5px solid var(--primary-blue); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
-        /* 錯誤 Banner */
         #errorBanner { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff6b6b; color: white; padding: 12px 20px; border-radius: 12px; font-size: 13px; z-index: 9999; max-width: 85%; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
 
-    <!-- 錯誤顯示 Banner -->
-    <div id="errorBanner"></div>
+<div id="errorBanner"></div>
 
-    <!-- Loading 遮罩 -->
-    <div id="loadingOverlay">
-        <div class="loading-spinner"></div>
-        <div style="color: var(--line-brown); font-weight: bold;">摳比努力載入中...</div>
+<div id="loadingOverlay">
+    <div class="loading-spinner"></div>
+    <div style="color: var(--line-brown); font-weight: bold;">摳比努力載入中...</div>
+</div>
+
+<div class="tab-group">
+    <div id="btn-record" class="tab-btn active" onclick="switchPage('recordPage')">摳比記帳</div>
+    <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想福利社</div>
+</div>
+
+<div id="recordPage" class="page active">
+    <div class="kobi-container" onclick="showFortune()">
+        <img src="kobi-logo.png" alt="KOBI" style="width:85%;">
     </div>
-
-    <div class="tab-group">
-        <div id="btn-record" class="tab-btn active" onclick="switchPage('recordPage')">摳比記帳</div>
-        <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想福利社</div>
+    <div class="balance-card">
+        <div style="font-size:14px; color:#999;">本期金庫餘額</div>
+        <div id="mainBalance" style="font-size:32px; font-weight:bold; color:var(--primary-blue);">$0</div>
     </div>
-
-    <div id="recordPage" class="page active">
-        <div class="kobi-container" onclick="showFortune()">
-            <img src="kobi-logo.png" alt="KOBI" style="width:85%;">
-        </div>
-
-        <div class="balance-card">
-            <div style="font-size:14px; color:#999;">本期金庫餘額</div>
-            <div id="mainBalance" style="font-size:32px; font-weight:bold; color:var(--primary-blue);">$0</div>
-        </div>
-
-        <div class="settle-guide" onclick="openSettleModal()">
-            <span>✨ 週期結束了？快來結算存基金！</span>
-            <b style="color:#FFB7B2;">GO ></b>
-        </div>
-
-        <button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆紀錄</button>
-        <div style="font-size: 11px; color: #ccc; text-align: center; margin-top: 8px;">💡 溫馨提示：點擊下方紀錄項目即可刪除資料</div>
-        <div id="listItems" style="width:100%; margin-top:20px;"></div>
+    <div class="settle-guide" onclick="openSettleModal()">
+        <span>✨ 週期結束了？快來結算存基金！</span>
+        <b style="color:#FFB7B2;">GO ></b>
     </div>
+    <button onclick="openModal('recordModal')" class="btn-main">＋ 新增一筆紀錄</button>
+    <div style="font-size:11px; color:#ccc; text-align:center; margin-top:8px;">💡 溫馨提示：點擊下方紀錄項目即可刪除資料</div>
+    <div id="listItems" style="width:100%; margin-top:20px;"></div>
+</div>
 
-    <div id="dreamPage" class="page">
-        <div class="balance-card" style="background: var(--primary-blue); color: white; border:none;">
-            <div style="font-size:14px; opacity:0.8;">目前累積夢想基金</div>
-            <div id="dreamFundTotal" style="font-size:28px; font-weight:bold;">$0</div>
-        </div>
-        <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-            <b style="font-size:18px;">☁️ 我的夢想清單</b>
-            <button onclick="openModal('dreamModal')" style="background:var(--line-brown); color:white; border:none; padding:8px 12px; border-radius:10px; font-size:12px;">+ 新目標</button>
-        </div>
-        
-        <div id="dreamContainer" style="width:100%;"></div>
-        <hr style="width:100%; border:0.5px solid #eee; margin: 25px 0;">
-        
-        <div style="width:100%; margin-bottom: 20px;">
-            <b style="font-size:18px;">📦 摳比的時光寶盒</b>
-            <div id="achievedContainer" style="width:100%; margin-top:10px; display: flex; flex-wrap: wrap; gap: 8px;"></div>
-        </div>
-
-        <hr style="width:100%; border:0.5px solid #eee; margin: 25px 0;">
-        <b style="width:100%; text-align:left; margin-bottom:10px;">🐹 摳比福利社推薦</b>
-        <div id="recommendContainer" style="width:100%; border: 1px dashed #ccc; padding: 20px; border-radius: 15px; color:#ccc; text-align:center;">
-            清單準備中...
-        </div>
+<div id="dreamPage" class="page">
+    <div class="balance-card" style="background: var(--primary-blue); color: white; border:none;">
+        <div style="font-size:14px; opacity:0.8;">目前累積夢想基金</div>
+        <div id="dreamFundTotal" style="font-size:28px; font-weight:bold;">$0</div>
     </div>
+    <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <b style="font-size:18px;">☁️ 我的夢想清單</b>
+        <button onclick="openModal('dreamModal')" style="background:var(--line-brown); color:white; border:none; padding:8px 12px; border-radius:10px; font-size:12px; cursor:pointer;">+ 新目標</button>
+    </div>
+    <div id="dreamContainer" style="width:100%;"></div>
+    <hr style="width:100%; border:0.5px solid #eee; margin:25px 0;">
+    <div style="width:100%; margin-bottom:20px;">
+        <b style="font-size:18px;">📦 摳比的時光寶盒</b>
+        <div id="achievedContainer" style="width:100%; margin-top:10px; display:flex; flex-wrap:wrap; gap:8px;"></div>
+    </div>
+    <hr style="width:100%; border:0.5px solid #eee; margin:25px 0;">
+    <b style="width:100%; text-align:left; margin-bottom:10px;">🐹 摳比福利社推薦</b>
+    <div id="recommendContainer" style="width:100%; border:1px dashed #ccc; padding:20px; border-radius:15px; color:#ccc; text-align:center;">清單準備中...</div>
+</div>
 
-    <!-- Modals -->
-    <div id="settleModal" class="modal"><div class="modal-content">
-        <h3>📊 週/月結算中心</h3>
-        <p style="font-size:13px; color:#666;">結算會將目前的帳目清空，並讓你決定要把多少剩餘的錢存進夢想基金。</p>
-        <div style="background:#f9f9f9; padding:15px; border-radius:15px; margin:15px 0;">
-            <div style="font-size:12px; color:#999;">本期可分配金額</div>
-            <div id="settlePreview" style="font-size:24px; font-weight:bold; color:var(--primary-blue);">$0</div>
-        </div>
-        <input type="number" id="transferAmount" placeholder="輸入撥入夢想基金金額">
-        <button onclick="executeSettle()" class="btn-main">確認結算並歸零帳目</button>
-        <button onclick="closeModal('settleModal')" style="background:none; border:none; color:#999; margin-top:10px;">再等等</button>
-    </div></div>
+<!-- Modals -->
+<div id="settleModal" class="modal"><div class="modal-content">
+    <h3>📊 週/月結算中心</h3>
+    <p style="font-size:13px; color:#666;">結算會將目前的帳目清空，並讓你決定要把多少剩餘的錢存進夢想基金。</p>
+    <div style="background:#f9f9f9; padding:15px; border-radius:15px; margin:15px 0;">
+        <div style="font-size:12px; color:#999;">本期可分配金額</div>
+        <div id="settlePreview" style="font-size:24px; font-weight:bold; color:var(--primary-blue);">$0</div>
+    </div>
+    <input type="number" id="transferAmount" placeholder="輸入撥入夢想基金金額">
+    <button id="settleConfirmBtn" class="btn-main">確認結算並歸零帳目</button>
+    <button onclick="closeModal('settleModal')" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">再等等</button>
+</div></div>
 
-    <div id="recordModal" class="modal"><div class="modal-content">
-        <h3>💰 新增紀錄</h3>
-        <input type="date" id="recordDate">
-        <select id="recordType" onchange="updateCategories()">
-            <option value="spend">支出 / 購買</option>
-            <option value="save">收入 / 存錢</option>
-        </select>
-        <select id="recordCategory"></select>
-        <input type="number" id="recordAmount" placeholder="金額">
-        <textarea id="recordNote" placeholder="備注一下..." rows="2"></textarea>
-        <button onclick="addRecord()" class="btn-main">存入金庫</button>
-        <button onclick="closeModal('recordModal')" style="background:none; border:none; color:#999; margin-top:10px;">取消</button>
-    </div></div>
+<div id="recordModal" class="modal"><div class="modal-content">
+    <h3>💰 新增紀錄</h3>
+    <input type="date" id="recordDate">
+    <select id="recordType"><option value="spend">支出 / 購買</option><option value="save">收入 / 存錢</option></select>
+    <select id="recordCategory"></select>
+    <input type="number" id="recordAmount" placeholder="金額">
+    <textarea id="recordNote" placeholder="備注一下..." rows="2"></textarea>
+    <button id="addRecordBtn" class="btn-main">存入金庫</button>
+    <button onclick="closeModal('recordModal')" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">取消</button>
+</div></div>
 
-    <div id="dreamModal" class="modal"><div class="modal-content">
-        <h3>✨ 設定新夢想</h3>
-        <input type="text" id="dreamName" placeholder="夢想名稱">
-        <input type="number" id="dreamTarget" placeholder="目標金額">
-        <button onclick="addDream()" class="btn-main">開始計畫</button>
-        <button onclick="closeModal('dreamModal')" style="background:none; border:none; color:#999; margin-top:10px;">取消</button>
-    </div></div>
+<div id="dreamModal" class="modal"><div class="modal-content">
+    <h3>✨ 設定新夢想</h3>
+    <input type="text" id="dreamName" placeholder="夢想名稱">
+    <input type="number" id="dreamTarget" placeholder="目標金額">
+    <button id="addDreamBtn" class="btn-main">開始計畫</button>
+    <button onclick="closeModal('dreamModal')" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">取消</button>
+</div></div>
 
-    <div id="fortuneModal" class="modal"><div class="modal-content">
-        <div style="font-size:40px;">🐹</div>
-        <div style="color:var(--primary-blue); font-weight:bold;">摳比今日開示</div>
-        <div id="fortuneText" style="line-height:1.7; margin:15px 0; white-space:pre-line;"></div>
-        <button onclick="closeModal('fortuneModal')" class="btn-main">好喔！</button>
-    </div></div>
+<div id="fortuneModal" class="modal"><div class="modal-content">
+    <div style="font-size:40px;">🐹</div>
+    <div style="color:var(--primary-blue); font-weight:bold;">摳比今日開示</div>
+    <div id="fortuneText" style="line-height:1.7; margin:15px 0; white-space:pre-line;"></div>
+    <button id="fortuneBtn" class="btn-main">好喔！</button>
+    <button id="cancelDeleteBtn" style="display:none; background:none; border:none; color:#999; margin-top:10px; cursor:pointer; width:100%;">先不要</button>
+</div></div>
 
-    <script>
-        const fortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃", "今日財運爆棚。✨\n🌈 幸運色：優雅正米色", "摳比永遠支持你！🐹\n🌈 幸運色：摳比藍", "省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠", "理財是為了自由。🕊️\n🌈 幸運色：純淨白", "夢想金庫長大中！📈\n🌈 幸運色：玫瑰金", "錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅", "控制物欲控制人生。🎮\n🌈 幸運色：經典黑", "你是省錢高手！👏\n🌈 幸運色：珊瑚橘", "記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅", "絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金", "小錢累積成大夢。🌊\n🌈 幸運色：天藍色", "好事即將發生。🌈\n🌈 幸運色：彩虹色", "今天會有意外小財。💰\n🌈 幸運色：檸檬黃"];
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, collection, addDoc, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-        const categories = {
-            save: ["薪水", "獎金", "投資", "摳比紅包", "其他"],
-            spend: ["吃喝費", "治裝費", "交通費", "網路手機", "玩耍費", "金融保險", "學習成長", "醫療", "其他"]
-        };
+const firebaseConfig = {
+    apiKey: "AIzaSyCP0ytf38A-qz0ocTZVX2IgJNfrHscDC-4",
+    authDomain: "kobi-dream-vault.firebaseapp.com",
+    projectId: "kobi-dream-vault",
+    storageBucket: "kobi-dream-vault.firebasestorage.app",
+    messagingSenderId: "959095807484",
+    appId: "1:959095807484:web:16ea95cb313e3f0f036679",
+    measurementId: "G-D1WRCDRB1F"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-        function switchPage(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            const activePage = document.getElementById(pageId);
-            const activeBtn = document.getElementById('btn-' + (pageId === 'recordPage' ? 'record' : 'dream'));
-            if(activePage) activePage.classList.add('active');
-            if(activeBtn) activeBtn.classList.add('active');
-            updateUI();
+let userId = null;
+let records = [];
+let dreams = [];
+let dreamFund = 0;
+let achievedDreams = [];
+let pendingDeleteId = null;
+
+const fortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃","今日財運爆棚。✨\n🌈 幸運色：優雅正米色","摳比永遠支持你！🐹\n🌈 幸運色：摳比藍","省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠","理財是為了自由。🕊️\n🌈 幸運色：純淨白","夢想金庫長大中！📈\n🌈 幸運色：玫瑰金","錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅","控制物欲控制人生。🎮\n🌈 幸運色：經典黑","你是省錢高手！👏\n🌈 幸運色：珊瑚橘","記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅","絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金","小錢累積成大夢。🌊\n🌈 幸運色：天藍色","好事即將發生。🌈\n🌈 幸運色：彩虹色","今天會有意外小財。💰\n🌈 幸運色：檸檬黃"];
+const categories = {
+    save: ["薪水","獎金","投資","摳比紅包","其他"],
+    spend: ["吃喝費","治裝費","交通費","網路手機","玩耍費","金融保險","學習成長","醫療","其他"]
+};
+
+// ── UI 工具 ──
+function showLoading(show) {
+    document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+}
+function showError(msg) {
+    const el = document.getElementById('errorBanner');
+    el.innerText = "⚠️ " + msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 8000);
+}
+function openModal(id) {
+    document.getElementById(id).style.display = 'flex';
+    if (id === 'recordModal') {
+        document.getElementById('recordDate').valueAsDate = new Date();
+        updateCategories();
+    }
+}
+function closeModal(id) {
+    document.getElementById(id).style.display = 'none';
+}
+window.openModal = openModal;
+window.closeModal = closeModal;
+
+// ── 分頁切換 ──
+window.switchPage = function(pageId) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+    document.getElementById('btn-' + (pageId === 'recordPage' ? 'record' : 'dream')).classList.add('active');
+    updateUI();
+};
+
+function updateCategories() {
+    const type = document.getElementById('recordType').value;
+    document.getElementById('recordCategory').innerHTML = categories[type].map(c => `<option value="${c}">${c}</option>`).join('');
+}
+document.getElementById('recordType').addEventListener('change', updateCategories);
+
+// ── Firestore 路徑 ──
+function uDoc(path) { return doc(db, "users", userId, ...path.split("/")); }
+function uCol(path) { return collection(db, "users", userId, ...path.split("/")); }
+
+// ── 讀取資料 ──
+async function loadAllData() {
+    showLoading(true);
+    try {
+        const userSnap = await getDoc(doc(db, "users", userId));
+        if (userSnap.exists()) {
+            dreamFund = userSnap.data().dreamFund || 0;
+        } else {
+            await setDoc(doc(db, "users", userId), { dreamFund: 0 });
         }
+        const [recSnap, drmSnap, achSnap] = await Promise.all([
+            getDocs(uCol("records")),
+            getDocs(uCol("dreams")),
+            getDocs(uCol("achieved"))
+        ]);
+        records = []; recSnap.forEach(d => records.push({ id: d.id, ...d.data() }));
+        dreams = [];  drmSnap.forEach(d => dreams.push({ id: d.id, ...d.data() }));
+        achievedDreams = []; achSnap.forEach(d => achievedDreams.push({ id: d.id, ...d.data() }));
+    } catch(e) {
+        showError("載入失敗：" + e.message + " (" + (e.code || "unknown") + ")");
+    }
+    showLoading(false);
+    updateUI();
+}
 
-        function updateCategories() {
-            const type = document.getElementById('recordType').value;
-            const catSelect = document.getElementById('recordCategory');
-            catSelect.innerHTML = categories[type].map(c => `<option value="${c}">${c}</option>`).join('');
+async function saveDreamFund() {
+    await setDoc(doc(db, "users", userId), { dreamFund }, { merge: true });
+}
+
+// ── 新增紀錄 ──
+async function addRecord() {
+    const date = document.getElementById('recordDate').value;
+    const type = document.getElementById('recordType').value;
+    const category = document.getElementById('recordCategory').value;
+    const amount = parseFloat(document.getElementById('recordAmount').value);
+    const note = document.getElementById('recordNote').value;
+    if (!date || !amount) return;
+    showLoading(true);
+    try {
+        const ref = await addDoc(uCol("records"), { date, type, category, amount, note });
+        records.push({ id: ref.id, date, type, category, amount, note });
+        closeModal('recordModal');
+        updateUI();
+    } catch(e) {
+        showError("新增失敗：" + e.message + " (" + (e.code || "unknown") + ")");
+    }
+    showLoading(false);
+}
+document.getElementById('addRecordBtn').addEventListener('click', addRecord);
+
+// ── 刪除紀錄 ──
+function askDeleteRecord(id) {
+    pendingDeleteId = id;
+    document.getElementById('fortuneText').innerText = "🐹 摳比問你：確定要刪除這筆紀錄嗎？";
+    document.getElementById('fortuneBtn').innerText = "確定刪除";
+    document.getElementById('cancelDeleteBtn').style.display = 'block';
+    openModal('fortuneModal');
+}
+async function executeDelete() {
+    showLoading(true);
+    try {
+        await deleteDoc(uDoc("records/" + pendingDeleteId));
+        records = records.filter(r => r.id !== pendingDeleteId);
+        resetFortuneModal();
+        closeModal('fortuneModal');
+        updateUI();
+    } catch(e) {
+        showError("刪除失敗：" + e.message + " (" + (e.code || "unknown") + ")");
+    }
+    showLoading(false);
+}
+
+// ── 結算 ──
+window.openSettleModal = function() {
+    const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
+    document.getElementById('settlePreview').innerText = `$${total.toLocaleString()}`;
+    document.getElementById('transferAmount').value = total > 0 ? total : 0;
+    openModal('settleModal');
+};
+async function executeSettle() {
+    const transfer = parseFloat(document.getElementById('transferAmount').value) || 0;
+    showLoading(true);
+    try {
+        await Promise.all(records.map(r => deleteDoc(uDoc("records/" + r.id))));
+        records = [];
+        dreamFund += transfer;
+        await saveDreamFund();
+        closeModal('settleModal');
+        updateUI();
+        document.getElementById('fortuneText').innerText = `🎉 結算成功！\n摳比已幫你將 $${transfer.toLocaleString()} \n存入夢想金庫囉！\n新的週期也要加油喔！🐹`;
+        document.getElementById('fortuneBtn').innerText = "收到！(๑•̀ㅂ•́)و";
+        document.getElementById('cancelDeleteBtn').style.display = 'none';
+        openModal('fortuneModal');
+    } catch(e) {
+        showError("結算失敗：" + e.message + " (" + (e.code || "unknown") + ")");
+    }
+    showLoading(false);
+}
+document.getElementById('settleConfirmBtn').addEventListener('click', executeSettle);
+
+// ── 新增夢想 ──
+async function addDream() {
+    const name = document.getElementById('dreamName').value;
+    const target = parseFloat(document.getElementById('dreamTarget').value);
+    if (!name || !target) return;
+    showLoading(true);
+    try {
+        const ref = await addDoc(uCol("dreams"), { name, target });
+        dreams.push({ id: ref.id, name, target });
+        closeModal('dreamModal');
+        updateUI();
+    } catch(e) {
+        showError("新增夢想失敗：" + e.message + " (" + (e.code || "unknown") + ")");
+    }
+    showLoading(false);
+}
+document.getElementById('addDreamBtn').addEventListener('click', addDream);
+
+// ── 刪除夢想 ──
+async function deleteDream(event, id) {
+    event.stopPropagation();
+    const dream = dreams.find(d => d.id === id);
+    if (!dream) return;
+    if (!confirm(`🐹 摳比問你：確定要取消【${dream.name}】這個夢想嗎？`)) return;
+    showLoading(true);
+    try {
+        await deleteDoc(uDoc("dreams/" + id));
+        dreams = dreams.filter(d => d.id !== id);
+        updateUI();
+    } catch(e) {
+        showError("刪除夢想失敗：" + e.message + " (" + (e.code || "unknown") + ")");
+    }
+    showLoading(false);
+}
+
+// ── 實現夢想 ──
+async function fulfillDream(id) {
+    const dream = dreams.find(d => d.id === id);
+    if (!dream) return;
+    if (dreamFund < dream.target) {
+        document.getElementById('fortuneText').innerText = "🐹 摳比提醒：\n基金還不夠實現這個夢想喔！\n再加油存一點點！";
+        document.getElementById('fortuneBtn').innerText = "好喔！";
+        document.getElementById('cancelDeleteBtn').style.display = 'none';
+        openModal('fortuneModal');
+        return;
+    }
+    showLoading(true);
+    try {
+        dreamFund -= dream.target;
+        const achieved = { name: dream.name, amount: dream.target, date: new Date().toLocaleDateString() };
+        const ref = await addDoc(uCol("achieved"), achieved);
+        achievedDreams.push({ id: ref.id, ...achieved });
+        await deleteDoc(uDoc("dreams/" + id));
+        dreams = dreams.filter(d => d.id !== id);
+        await saveDreamFund();
+        updateUI();
+        document.getElementById('fortuneText').innerText = `✨ 夢想實現！ ✨\n\n【${dream.name}】\n已成功解鎖並存入時光寶盒！\n摳比為你感到驕傲！🐹`;
+        document.getElementById('fortuneBtn').innerText = "太棒了！";
+        document.getElementById('cancelDeleteBtn').style.display = 'none';
+        openModal('fortuneModal');
+    } catch(e) {
+        showError("操作失敗：" + e.message + " (" + (e.code || "unknown") + ")");
+    }
+    showLoading(false);
+}
+
+// ── 運勢 ──
+window.showFortune = function() {
+    resetFortuneModal();
+    document.getElementById('fortuneText').innerText = fortunes[Math.floor(Math.random() * fortunes.length)];
+    openModal('fortuneModal');
+};
+
+function resetFortuneModal() {
+    pendingDeleteId = null;
+    document.getElementById('fortuneBtn').innerText = "好喔！";
+    document.getElementById('cancelDeleteBtn').style.display = 'none';
+}
+
+document.getElementById('fortuneBtn').addEventListener('click', () => {
+    if (pendingDeleteId) {
+        executeDelete();
+    } else {
+        closeModal('fortuneModal');
+    }
+});
+document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
+    resetFortuneModal();
+    closeModal('fortuneModal');
+});
+
+window.addEventListener('click', (e) => {
+    if (e.target.classList.contains('modal')) {
+        if (e.target.id === 'fortuneModal') resetFortuneModal();
+        closeModal(e.target.id);
+    }
+});
+
+// ── 更新畫面 ──
+function updateUI() {
+    const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
+    document.getElementById('mainBalance').innerText = `$${total.toLocaleString()}`;
+    document.getElementById('dreamFundTotal').innerText = `$${dreamFund.toLocaleString()}`;
+
+    const list = document.getElementById('listItems');
+    list.innerHTML = '';
+    const sorted = [...records].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+    if (!sorted.length) {
+        list.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">本期尚無紀錄</div>';
+    }
+    sorted.forEach(r => {
+        const div = document.createElement('div');
+        div.className = 'history-item';
+        div.style.borderLeftColor = r.type === 'save' ? '#A2D2FF' : '#9E7E6B';
+        div.innerHTML = `<div><b>${r.category}</b> <small>${r.date}</small><br><span style="font-size:12px;color:#999;">${r.note || ''}</span></div><b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">${r.type==='save'?'+':'-'}${r.amount.toLocaleString()}</b>`;
+        div.addEventListener('click', () => askDeleteRecord(r.id));
+        list.appendChild(div);
+    });
+
+    const dc = document.getElementById('dreamContainer');
+    dc.innerHTML = '';
+    if (!dreams.length) {
+        dc.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
+    }
+    dreams.forEach(d => {
+        const percent = Math.min((dreamFund / d.target) * 100, 100).toFixed(1);
+        const card = document.createElement('div');
+        card.className = 'dream-card';
+        card.innerHTML = `
+            <div class="del-btn" style="position:absolute;top:5px;right:12px;color:#ccc;font-size:20px;padding:5px;">&times;</div>
+            <b>${d.name}</b> ($${d.target.toLocaleString()})
+            <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
+            <div style="font-size:12px;color:#999;text-align:right;">達成度 ${percent}% (點擊解鎖)</div>`;
+        card.addEventListener('click', () => fulfillDream(d.id));
+        card.querySelector('.del-btn').addEventListener('click', (e) => deleteDream(e, d.id));
+        dc.appendChild(card);
+    });
+
+    const ac = document.getElementById('achievedContainer');
+    ac.innerHTML = '';
+    if (!achievedDreams.length) {
+        ac.innerHTML = '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
+    }
+    achievedDreams.forEach(ad => {
+        const tag = document.createElement('div');
+        tag.style.cssText = "background:#eee; padding:6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd;";
+        tag.innerText = `🏆 ${ad.name} ($${ad.amount.toLocaleString()})`;
+        ac.appendChild(tag);
+    });
+}
+
+// ── 初始化 ──
+async function init() {
+    showLoading(true);
+    try {
+        await liff.init({ liffId: "2010068096-vsSIzIqA" });
+        if (liff.isLoggedIn()) {
+            const profile = await liff.getProfile();
+            userId = profile.userId;
+        } else {
+            liff.login();
+            return;
         }
+    } catch(e) {
+        console.warn("LIFF 失敗，使用測試模式", e);
+        userId = "test-user-local";
+    }
+    await loadAllData();
 
-        function updateUI() {
-            // 餘額
-            const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
-            document.getElementById('mainBalance').innerText = `$${total.toLocaleString()}`;
-            document.getElementById('dreamFundTotal').innerText = `$${dreamFund.toLocaleString()}`;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('dream') === '1') window.switchPage('dreamPage');
+    else if (params.get('draw') === '1') { window.switchPage('recordPage'); setTimeout(window.showFortune, 500); }
+}
 
-            // 紀錄列表（最新10筆）
-            const list = document.getElementById('listItems');
-            const sorted = [...records].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
-            list.innerHTML = sorted.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">本期尚無紀錄</div>';
-            sorted.forEach(r => {
-                list.innerHTML += `<div class="history-item" onclick="deleteRecord('${r.id}')" style="border-left-color: ${r.type==='save'?'#A2D2FF':'#9E7E6B'}; cursor:pointer;">
-                    <div><b>${r.category}</b> <small>${r.date}</small><br><span style="font-size:12px; color:#999;">${r.note || ''}</span></div>
-                    <b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">${r.type==='save' ? '+' : '-'}${r.amount.toLocaleString()}</b>
-                </div>`;
-            });
-
-            // 夢想清單
-            const dc = document.getElementById('dreamContainer');
-            dc.innerHTML = dreams.length ? '' : '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
-            dreams.forEach(d => {
-                let percent = Math.min((dreamFund / d.target) * 100, 100).toFixed(1);
-                dc.innerHTML += `
-                    <div class="dream-card" onclick="fulfillDream('${d.id}')" style="cursor:pointer; position:relative;">
-                        <div onclick="deleteDream(event, '${d.id}')" style="position:absolute; top:5px; right:12px; color:#ccc; font-size:20px; padding:5px; z-index:10;">&times;</div>
-                        <b>${d.name}</b> ($${d.target.toLocaleString()})
-                        <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-                        <div style="font-size:12px; color:#999; text-align:right;">達成度 ${percent}% (點擊解鎖)</div>
-                    </div>`;
-            });
-
-            // 時光寶盒
-            const ac = document.getElementById('achievedContainer');
-            ac.innerHTML = achievedDreams.length ? '' : '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
-            achievedDreams.forEach(ad => {
-                ac.innerHTML += `<div style="background:#eee; padding:6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd;">🏆 ${ad.name} ($${ad.amount.toLocaleString()})</div>`;
-            });
-        }
-
-        function showFortune() {
-            const idx = Math.floor(Math.random() * fortunes.length);
-            document.getElementById('fortuneText').innerText = fortunes[idx];
-            const modalBtn = document.querySelector('#fortuneModal .btn-main');
-            modalBtn.innerText = "好喔！";
-            modalBtn.onclick = () => closeModal('fortuneModal');
-            openModal('fortuneModal');
-        }
-
-        function openModal(id) {
-            document.getElementById(id).style.display = 'flex';
-            if(id === 'recordModal') {
-                document.getElementById('recordDate').valueAsDate = new Date();
-                updateCategories();
-            }
-        }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
-    </script>
+init();
+</script>
 
 </body>
 </html>
