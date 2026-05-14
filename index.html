@@ -581,7 +581,8 @@ async function fulfillDream(id) {
 window.showFortune = function() {
     resetFortuneModal();
     document.getElementById('fortuneText').innerText = fortunes[Math.floor(Math.random() * fortunes.length)];
-    openModal('fortuneModal');
+    const modal = document.getElementById('fortuneModal');
+    modal.style.display = 'flex';
 };
 function resetFortuneModal() {
     pendingDeleteId = null;
