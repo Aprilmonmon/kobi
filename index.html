@@ -22,7 +22,8 @@
         .progress-fill { background: var(--primary-blue); height: 100%; width: 0%; transition: 0.8s; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 2000; justify-content: center; align-items: center; }
         .modal-content { background: white; padding: 18px 20px; border-radius: 24px; width: 80%; max-width: 300px; text-align: center; max-height: 80vh; overflow-y: auto; }
-        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
+        input, select, textarea { width: 100%; padding: 10px 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 15px; font-family: inherit; }
+        input[type="date"] { font-size: 14px; }
         .btn-main { width: 100%; padding: 14px; background: var(--primary-blue); color: white; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
         /* 歷史紀錄區塊 */
@@ -241,6 +242,7 @@ let achievedDreams = [];
 let historyPeriods = [];  // 封存的歷史週期
 let pendingDeleteId = null;      // 刪除紀錄用
 let pendingDeleteDreamId = null; // 刪除夢想用
+let pendingDeleteAchievedId = null; // 刪除時光寶盒用
 
 const fortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃","今日財運爆棚。✨\n🌈 幸運色：優雅正米色","摳比永遠支持你！🐹\n🌈 幸運色：摳比藍","省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠","理財是為了自由。🕊️\n🌈 幸運色：純淨白","夢想金庫長大中！📈\n🌈 幸運色：玫瑰金","錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅","控制物欲控制人生。🎮\n🌈 幸運色：經典黑","你是省錢高手！👏\n🌈 幸運色：珊瑚橘","記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅","絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金","小錢累積成大夢。🌊\n🌈 幸運色：天藍色","好事即將發生。🌈\n🌈 幸運色：彩虹色","今天會有意外小財。💰\n🌈 幸運色：檸檬黃"];
 const categories = {
@@ -473,6 +475,31 @@ async function executeDeleteDream() {
     showLoading(false);
 }
 
+// ── 刪除時光寶盒 ──
+
+function askDeleteAchieved(id, name) {
+    pendingDeleteAchievedId = id;
+    document.getElementById('fortuneText').innerText = `🐹 摳比問你：\n確定要從時光寶盒移除\n【${name}】嗎？\n（這個成就會消失喔）`;
+    document.getElementById('fortuneBtn').innerText = "確定移除";
+    document.getElementById('cancelDeleteBtn').style.display = 'block';
+    openModal('fortuneModal');
+}
+
+async function executeDeleteAchieved() {
+    showLoading(true);
+    try {
+        await deleteDoc(uDoc("achieved/" + pendingDeleteAchievedId));
+        achievedDreams = achievedDreams.filter(a => a.id !== pendingDeleteAchievedId);
+        pendingDeleteAchievedId = null;
+        resetFortuneModal();
+        closeModal('fortuneModal');
+        updateUI();
+    } catch(e) {
+        showError("移除失敗：" + e.message + " (" + (e.code || "unknown") + ")");
+    }
+    showLoading(false);
+}
+
 // ── 實現夢想 ──
 async function fulfillDream(id) {
     const dream = dreams.find(d => d.id === id);
@@ -513,12 +540,14 @@ window.showFortune = function() {
 function resetFortuneModal() {
     pendingDeleteId = null;
     pendingDeleteDreamId = null;
+    pendingDeleteAchievedId = null;
     document.getElementById('fortuneBtn').innerText = "好喔！";
     document.getElementById('cancelDeleteBtn').style.display = 'none';
 }
 document.getElementById('fortuneBtn').addEventListener('click', () => {
     if (pendingDeleteId) executeDelete();
     else if (pendingDeleteDreamId) executeDeleteDream();
+    else if (pendingDeleteAchievedId) executeDeleteAchieved();
     else closeModal('fortuneModal');
 });
 document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
@@ -666,16 +695,42 @@ function updateUI() {
         dc.appendChild(card);
     });
 
-    // 時光寶盒
+    // 時光寶盒（摺疊，預設顯示3個，可刪除）
     const ac = document.getElementById('achievedContainer');
     ac.innerHTML = '';
-    if (!achievedDreams.length) ac.innerHTML = '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
-    achievedDreams.forEach(ad => {
-        const tag = document.createElement('div');
-        tag.style.cssText = "background:#eee; padding:6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd;";
-        tag.innerText = `🏆 ${ad.name} ($${ad.amount.toLocaleString()})`;
-        ac.appendChild(tag);
-    });
+    if (!achievedDreams.length) {
+        ac.innerHTML = '<div style="color:#ccc; font-size:12px;">尚未收藏任何成就...</div>';
+    } else {
+        const PREVIEW = 3;
+        const showAll = ac.dataset.showAll === 'true';
+        const toShow = showAll ? achievedDreams : achievedDreams.slice(0, PREVIEW);
+
+        toShow.forEach(ad => {
+            const wrap = document.createElement('div');
+            wrap.style.cssText = "position:relative; display:inline-flex; align-items:center;";
+            const tag = document.createElement('div');
+            tag.style.cssText = "background:#eee; padding:6px 28px 6px 12px; border-radius:20px; font-size:12px; color:#666; border:1px solid #ddd; cursor:default;";
+            tag.innerText = `🏆 ${ad.name} ($${ad.amount.toLocaleString()})`;
+            const delBtn = document.createElement('span');
+            delBtn.innerText = '×';
+            delBtn.style.cssText = "position:absolute; right:8px; color:#bbb; font-size:14px; cursor:pointer; line-height:1;";
+            delBtn.addEventListener('click', () => askDeleteAchieved(ad.id, ad.name));
+            wrap.appendChild(tag);
+            wrap.appendChild(delBtn);
+            ac.appendChild(wrap);
+        });
+
+        if (achievedDreams.length > PREVIEW) {
+            const toggleBtn = document.createElement('div');
+            toggleBtn.style.cssText = "width:100%; text-align:center; font-size:12px; color:var(--line-brown); cursor:pointer; margin-top:6px; font-weight:bold;";
+            toggleBtn.innerText = showAll ? '▲ 收起' : `▼ 查看全部（共 ${achievedDreams.length} 個）`;
+            toggleBtn.addEventListener('click', () => {
+                ac.dataset.showAll = showAll ? 'false' : 'true';
+                updateUI();
+            });
+            ac.appendChild(toggleBtn);
+        }
+    }
 
     // 歷史紀錄
     window.renderHistory();
@@ -706,17 +761,23 @@ function parseCSV(text) {
 function matchProfile(productTags, profile) {
     if (!profile || !productTags) return true;
     const tags = productTags.split('、').map(t => t.trim());
-    // 性別
     const genderMap = { female: '女生', male: '男生' };
+    const ageMap = { student: '學生', '20s': '20-30歲', '30s': '30-40歲', '40s': '40歲' };
+    // 有設定性別，就要有交集
     if (profile.gender && genderMap[profile.gender]) {
         if (!tags.some(t => t.includes(genderMap[profile.gender]))) return false;
     }
-    // 年齡
-    const ageMap = { student: '學生', '20s': '20-30歲', '30s': '30-40歲', '40s': '40歲' };
+    // 年齡有交集就顯示
     if (profile.age && ageMap[profile.age]) {
         if (!tags.some(t => t.includes(ageMap[profile.age]))) return false;
     }
     return true;
+}
+
+function shuffleAndPick(arr, min = 4, max = 6) {
+    const shuffled = [...arr].sort(() => Math.random() - 0.5);
+    const count = Math.min(shuffled.length, min + Math.floor(Math.random() * (max - min + 1)));
+    return shuffled.slice(0, count);
 }
 
 async function loadProducts() {
@@ -726,16 +787,17 @@ async function loadProducts() {
         const text = await res.text();
         const products = parseCSV(text);
 
-        // 根據用戶輪廓篩選
+        // 根據用戶輪廓篩選，再隨機抽4-6個
         const filtered = products.filter(p => matchProfile(p['標籤'], userProfile));
+        const toShow = shuffleAndPick(filtered);
 
-        if (!filtered.length) {
+        if (!toShow.length) {
             container.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px; border:1px dashed #ccc; border-radius:15px;">目前沒有符合你喜好的商品</div>';
             return;
         }
 
         container.innerHTML = '';
-        filtered.forEach(p => {
+        toShow.forEach(p => {
             const card = document.createElement('div');
             card.className = 'product-card';
             card.innerHTML = `
