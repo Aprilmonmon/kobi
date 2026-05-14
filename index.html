@@ -69,7 +69,7 @@
 
             } catch (e) {
                 console.error("載入資料失敗", e);
-                alert("⚠️ 資料載入失敗，請檢查網路後重新整理");
+                showError("載入資料失敗：" + e.message + " (code: " + (e.code || "unknown") + ")");
             }
             showLoading(false);
             updateUI();
@@ -95,7 +95,7 @@
                 records.push({ id: docRef.id, date, type, category, amount, note });
                 closeModal('recordModal');
                 updateUI();
-            } catch(e) { alert("新增失敗，請重試"); }
+            } catch(e) { showError("新增失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
             showLoading(false);
         }
 
@@ -136,7 +136,7 @@
                 modalBtn.innerText = "好喔！";
                 modalBtn.onclick = () => closeModal('fortuneModal');
                 updateUI();
-            } catch(e) { alert("刪除失敗，請重試"); }
+            } catch(e) { showError("刪除失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
             showLoading(false);
         }
 
@@ -170,7 +170,7 @@
                 modalBtn.onclick = () => closeModal('fortuneModal');
                 if(document.getElementById('cancelDeleteBtn')) document.getElementById('cancelDeleteBtn').style.display = 'none';
                 openModal('fortuneModal');
-            } catch(e) { alert("結算失敗，請重試"); }
+            } catch(e) { showError("結算失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
             showLoading(false);
         }
 
@@ -186,7 +186,7 @@
                 dreams.push({ id: docRef.id, name, target });
                 closeModal('dreamModal');
                 updateUI();
-            } catch(e) { alert("新增夢想失敗，請重試"); }
+            } catch(e) { showError("新增夢想失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
             showLoading(false);
         }
 
@@ -201,7 +201,7 @@
                     await deleteDoc(userDoc(`dreams/${id}`));
                     dreams = dreams.filter(d => d.id !== id);
                     updateUI();
-                } catch(e) { alert("刪除失敗，請重試"); }
+                } catch(e) { showError("刪除夢想失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
                 showLoading(false);
             }
         }
@@ -236,13 +236,21 @@
                 modalBtn.innerText = "太棒了！";
                 modalBtn.onclick = () => closeModal('fortuneModal');
                 openModal('fortuneModal');
-            } catch(e) { alert("操作失敗，請重試"); }
+            } catch(e) { showError("實現夢想失敗：" + e.message + " (code: " + (e.code || "unknown") + ")"); }
             showLoading(false);
         }
 
         // ── Loading 遮罩 ──
         function showLoading(show) {
             document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+        }
+
+        // ── 錯誤顯示 ──
+        function showError(msg) {
+            const el = document.getElementById('errorBanner');
+            el.innerText = "⚠️ " + msg;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 8000);
         }
 
         // ── 初始化 ──
@@ -274,6 +282,7 @@
             } catch(e) {
                 // LIFF 初始化失敗（本地測試）時，用預設 ID
                 console.log("LIFF 初始化失敗，使用測試模式", e);
+                showError("LIFF 初始化失敗：" + e.message);
                 userId = "test-user-local";
             }
 
@@ -319,9 +328,14 @@
         #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; gap: 12px; }
         .loading-spinner { width: 48px; height: 48px; border: 5px solid var(--primary-blue); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
+        /* 錯誤 Banner */
+        #errorBanner { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff6b6b; color: white; padding: 12px 20px; border-radius: 12px; font-size: 13px; z-index: 9999; max-width: 85%; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     </style>
 </head>
 <body>
+
+    <!-- 錯誤顯示 Banner -->
+    <div id="errorBanner"></div>
 
     <!-- Loading 遮罩 -->
     <div id="loadingOverlay">
