@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>摳比後台 · 商品管理</title>
+<style>
+  :root {
+    --bg: #F7F5F2;
+    --card: #FFFFFF;
+    --brown: #9E7E6B;
+    --blue: #A2D2FF;
+    --blue-dark: #6DB8F5;
+    --text: #4A3F38;
+    --sub: #A89990;
+    --border: #E8E2DC;
+    --green: #5DBE8A;
+    --red: #E07B6A;
+    --orange: #FF6B35;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--brown);
+    color: white;
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  header .logo { font-size: 28px; }
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.5px; }
+  header p { font-size: 12px; opacity: 0.75; margin-top: 2px; }
+
+  /* ── Layout ── */
+  .container { max-width: 960px; margin: 0 auto; padding: 28px 20px 60px; }
+
+  /* ── Step Cards ── */
+  .step-card {
+    background: var(--card);
+    border-radius: 20px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+    border: 1px solid var(--border);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  }
+  .step-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--brown);
+    background: #F5EDE8;
+    padding: 4px 12px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+    letter-spacing: 0.5px;
+  }
+  .step-card h2 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .step-card p { font-size: 13px; color: var(--sub); line-height: 1.6; margin-bottom: 14px; }
+
+  /* ── Upload Zone ── */
+  .upload-zone {
+    border: 2px dashed var(--border);
+    border-radius: 14px;
+    padding: 36px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    position: relative;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: var(--blue-dark); background: #EEF6FF; }
+  .upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+  .upload-zone .icon { font-size: 36px; margin-bottom: 10px; }
+  .upload-zone .hint { font-size: 14px; color: var(--sub); }
+  .upload-zone .hint b { color: var(--blue-dark); }
+
+  /* ── Sheet URL input ── */
+  .input-row { display: flex; gap: 10px; align-items: stretch; }
+  .input-row input {
+    flex: 1;
+    padding: 12px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    transition: 0.2s;
+  }
+  .input-row input:focus { border-color: var(--blue-dark); background: white; }
+  .input-row input::placeholder { color: #ccc; }
+
+  /* ── Buttons ── */
+  .btn {
+    padding: 12px 22px;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: 0.15s;
+    white-space: nowrap;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--brown); color: white; }
+  .btn-primary:hover { background: #8a6d5c; }
+  .btn-blue { background: var(--blue); color: white; }
+  .btn-blue:hover { background: var(--blue-dark); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { background: #4aaa78; }
+  .btn-sm { padding: 7px 14px; font-size: 12px; border-radius: 8px; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+  /* ── Product Table ── */
+  #productArea { display: none; }
+  .table-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .table-toolbar .count { font-size: 13px; color: var(--sub); }
+  .table-toolbar .count b { color: var(--text); }
+
+  .product-list { display: flex; flex-direction: column; gap: 14px; }
+
+  .product-row {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: 14px;
+    transition: 0.2s;
+    position: relative;
+  }
+  .product-row.excluded { opacity: 0.4; }
+  .product-row.excluded::after {
+    content: '已略過';
+    position: absolute;
+    top: 12px; right: 12px;
+    font-size: 11px; color: var(--sub);
+    background: #f0f0f0; padding: 3px 8px; border-radius: 20px;
+  }
+
+  .product-thumb {
+    width: 72px; height: 72px;
+    border-radius: 10px;
+    object-fit: cover;
+    background: #f0f0f0;
+    border: 1px solid #eee;
+    flex-shrink: 0;
+  }
+  .product-thumb-placeholder {
+    width: 72px; height: 72px;
+    border-radius: 10px;
+    background: #f5f5f5;
+    border: 1.5px dashed #ddd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    cursor: pointer;
+    position: relative;
+  }
+  .product-thumb-placeholder input {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%;
+  }
+
+  .product-body { display: flex; flex-direction: column; gap: 8px; }
+  .product-name-row { display: flex; gap: 8px; align-items: flex-start; }
+  .product-name-input {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    line-height: 1.4;
+    padding: 0;
+    resize: none;
+    outline: none;
+    border-bottom: 1px dashed #ddd;
+  }
+  .product-name-input:focus { border-bottom-color: var(--blue-dark); }
+
+  .product-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .price-input {
+    font-size: 14px; font-weight: 700; color: var(--blue-dark);
+    border: none; background: transparent; font-family: inherit;
+    width: 80px; outline: none; border-bottom: 1px dashed #ddd;
+    padding: 0;
+  }
+  .price-input:focus { border-bottom-color: var(--blue-dark); }
+  .price-prefix { font-size: 13px; color: var(--sub); }
+
+  .link-row { display: flex; gap: 6px; align-items: center; }
+  .link-badge {
+    font-size: 11px; padding: 3px 8px; border-radius: 20px;
+    font-weight: 700; white-space: nowrap;
+  }
+  .link-ok { background: #E8F8EF; color: var(--green); }
+  .link-missing { background: #FFF0EE; color: var(--red); }
+  .link-input {
+    font-size: 11px; color: var(--sub); border: none; background: transparent;
+    font-family: monospace; outline: none; flex: 1;
+    border-bottom: 1px dashed #ddd; padding: 0;
+  }
+  .link-input:focus { border-bottom-color: var(--blue-dark); }
+
+  /* ── Tag chips ── */
+  .tag-section { margin-top: 4px; }
+  .tag-section-label { font-size: 11px; color: var(--sub); margin-bottom: 5px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 5px; }
+  .chip {
+    padding: 4px 10px; border-radius: 20px; border: 1.5px solid #ddd;
+    font-size: 11px; cursor: pointer; background: white; color: var(--text);
+    transition: 0.15s; user-select: none;
+  }
+  .chip:hover { border-color: var(--brown); }
+  .chip.on-gender { border-color: var(--brown); background: var(--brown); color: white; font-weight: 700; }
+  .chip.on-age { border-color: #9B8FE0; background: #9B8FE0; color: white; font-weight: 700; }
+  .chip.on-interest { border-color: var(--blue-dark); background: var(--blue); color: white; font-weight: 700; }
+
+  .row-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
+  .btn-exclude { background: none; border: 1px solid #eee; color: #ccc; padding: 4px 8px; border-radius: 8px; font-size: 11px; cursor: pointer; }
+  .btn-exclude:hover { border-color: var(--red); color: var(--red); }
+
+  /* ── Submit bar ── */
+  .submit-bar {
+    background: white;
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 22px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .submit-info { font-size: 13px; color: var(--sub); }
+  .submit-info b { color: var(--text); font-size: 15px; }
+
+  /* ── Toast ── */
+  #toast {
+    position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+    background: #333; color: white; padding: 12px 22px; border-radius: 14px;
+    font-size: 13px; z-index: 9999; display: none; white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  }
+
+  /* ── Progress ── */
+  #progressBar {
+    display: none; width: 100%; height: 6px; background: #eee;
+    border-radius: 3px; margin-top: 12px; overflow: hidden;
+  }
+  #progressFill { height: 100%; background: var(--green); width: 0%; transition: width 0.3s; border-radius: 3px; }
+
+  /* ── Help note ── */
+  .help-note {
+    background: #FFF8F0;
+    border: 1px solid #FFE0C0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: #A07050;
+    line-height: 1.7;
+    margin-top: 12px;
+  }
+  .help-note b { color: var(--brown); }
+
+  @media (max-width: 600px) {
+    .container { padding: 16px 12px 60px; }
+    header { padding: 14px 16px; }
+    .step-card { padding: 18px 16px; }
+    .product-row { grid-template-columns: 60px 1fr; }
+    .product-thumb, .product-thumb-placeholder { width: 60px; height: 60px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🐹</div>
+  <div>
+    <h1>摳比後台 · 商品管理</h1>
+    <p>批量匯入蝦皮分潤商品到福利社</p>
+  </div>
+</header>
+
+<div id="toast"></div>
+
+<div class="container">
+
+  <!-- Step 1: Google Sheet URL -->
+  <div class="step-card">
+    <div class="step-label">⚙️ STEP 1</div>
+    <h2>設定 Google 試算表網址</h2>
+    <p>貼上你的試算表「發佈為網頁」的連結，商品資料會直接寫進去。</p>
+    <div class="input-row">
+      <input type="text" id="sheetScriptUrl" placeholder="貼上 Google Apps Script 部署網址（https://script.google.com/macros/s/...）">
+      <button class="btn btn-primary" onclick="saveSheetUrl()">儲存</button>
+    </div>
+    <div class="help-note">
+      📌 <b>還沒有 Script 網址？</b> 請依照下方說明建立一個 Google Apps Script，讓後台可以把商品寫進試算表。<br>
+      詳細步驟：試算表 → 擴充功能 → Apps Script → 貼上程式碼 → 部署為網頁應用程式 → 複製網址貼這裡。
+    </div>
+  </div>
+
+  <!-- Step 2: Upload CSV -->
+  <div class="step-card">
+    <div class="step-label">📂 STEP 2</div>
+    <h2>上傳蝦皮批量分潤 CSV</h2>
+    <p>從蝦皮聯盟行銷後台匯出「批量商品連結」CSV，直接拖進來或點擊選擇。</p>
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" accept=".csv" id="csvInput" onchange="handleCSV(this.files[0])">
+      <div class="icon">📄</div>
+      <div class="hint">拖曳 CSV 到這裡，或 <b>點擊選擇檔案</b></div>
+    </div>
+  </div>
+
+  <!-- Step 3: Edit & Tag -->
+  <div id="productArea">
+    <div class="step-card" style="padding-bottom:16px;">
+      <div class="step-label">🏷️ STEP 3</div>
+      <h2>設定標籤並確認資料</h2>
+      <p>確認名稱、售價、分潤連結是否正確，並為每個商品設定受眾標籤（影響摳比的推薦邏輯）。</p>
+
+      <div class="table-toolbar">
+        <div class="count">共讀入 <b id="totalCount">0</b> 筆，已選 <b id="selectedCount">0</b> 筆</div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-sm btn-blue" onclick="applyTagsToAll()">📋 將目前標籤套用全部</button>
+        </div>
+      </div>
+
+      <div class="product-list" id="productList"></div>
+
+      <div id="progressBar"><div id="progressFill"></div></div>
+
+      <div class="submit-bar">
+        <div class="submit-info">準備送出 <b id="submitCount">0</b> 筆商品到試算表</div>
+        <button class="btn btn-green" id="submitBtn" onclick="submitAll()">🚀 批量送出到試算表</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── 設定區 ──
+const GENDER_OPTIONS = [
+  { val: 'female', label: '👩 女生' },
+  { val: 'male',   label: '👨 男生' },
+  { val: 'all',    label: '🌈 不限' },
+];
+const AGE_OPTIONS = [
+  { val: 'student', label: '🎒 學生' },
+  { val: '20-30',   label: '✨ 20-30' },
+  { val: '30-40',   label: '💼 30-40' },
+  { val: '40',      label: '🌿 40+' },
+  { val: 'all',     label: '🌈 不限' },
+];
+const INTEREST_OPTIONS = [
+  { val: 'fashion', label: '👗 穿搭' },
+  { val: 'beauty',  label: '💄 美妝' },
+  { val: '3c',      label: '📱 3C' },
+  { val: 'food',    label: '🍜 美食' },
+  { val: 'travel',  label: '✈️ 旅遊' },
+  { val: 'home',    label: '🏠 居家' },
+  { val: 'sport',   label: '🏃 運動' },
+  { val: 'book',    label: '📚 學習' },
+];
+
+let products = []; // { name, price, link, imgUrl, gender, age, interests[], excluded }
+let sheetUrl = localStorage.getItem('kobi_sheet_url') || '';
+
+// 初始化
+if (sheetUrl) document.getElementById('sheetScriptUrl').value = sheetUrl;
+
+function saveSheetUrl() {
+  const v = document.getElementById('sheetScriptUrl').value.trim();
+  if (!v.startsWith('https://script.google.com')) {
+    showToast('⚠️ 網址格式不對，請確認是 Apps Script 部署網址');
+    return;
+  }
+  sheetUrl = v;
+  localStorage.setItem('kobi_sheet_url', v);
+  showToast('✅ 試算表網址已儲存！');
+}
+
+// ── CSV 解析 ──
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^\uFEFF/, '').replace(/^"|"$/g, ''));
+  return lines.slice(1).filter(l => l.trim()).map(line => {
+    const cols = [];
+    let cur = '', inQ = false;
+    for (const ch of line) {
+      if (ch === '"') inQ = !inQ;
+      else if (ch === ',' && !inQ) { cols.push(cur.trim()); cur = ''; }
+      else cur += ch;
+    }
+    cols.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = (cols[i] || '').replace(/^"|"$/g, '').trim());
+    return obj;
+  });
+}
+
+function extractShopAndItem(link) {
+  // https://shopee.tw/product/SHOPID/ITEMID
+  const m = link.match(/shopee\.tw\/product\/(\d+)\/(\d+)/);
+  if (m) return { shopId: m[1], itemId: m[2] };
+  return null;
+}
+
+function buildThumbUrl(shopId, itemId) {
+  // 蝦皮圖片 CDN 格式（公開可用）
+  return `https://down-tw.img.susercontent.com/file/tw-11134207-7r98y-${itemId}`;
+}
+
+function handleCSV(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const rows = parseCSV(e.target.result);
+      products = rows.map(r => {
+        const ids = extractShopAndItem(r['商品連結'] || '');
+        const priceRaw = (r['商品價格'] || '0').replace(/[^0-9.]/g, '');
+        return {
+          name: r['商品名稱'] || '',
+          price: parseFloat(priceRaw) || 0,
+          link: r['推廣連結'] || '',
+          shopLink: r['商品連結'] || '',
+          imgUrl: ids ? buildThumbUrl(ids.shopId, ids.itemId) : '',
+          shopId: ids?.shopId || '',
+          itemId: ids?.itemId || '',
+          gender: '',
+          age: '',
+          interests: [],
+          excluded: false,
+        };
+      });
+      renderProducts();
+      document.getElementById('productArea').style.display = 'block';
+      document.getElementById('productArea').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      showToast(`✅ 成功讀入 ${products.length} 筆商品！`);
+    } catch(err) {
+      showToast('❌ CSV 解析失敗：' + err.message);
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+// ── Drag & Drop ──
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if (f && f.name.endsWith('.csv')) handleCSV(f);
+  else showToast('⚠️ 請上傳 .csv 檔案');
+});
+
+// ── 渲染商品列表 ──
+function renderProducts() {
+  const list = document.getElementById('productList');
+  list.innerHTML = '';
+  products.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'product-row' + (p.excluded ? ' excluded' : '');
+    div.id = `row-${i}`;
+
+    const thumbHtml = p.imgUrl
+      ? `<img class="product-thumb" src="${p.imgUrl}" onerror="this.style.display='none'; document.getElementById('ph-${i}').style.display='flex';" alt="">`
+      : '';
+    const placeholderStyle = p.imgUrl ? 'display:none;' : '';
+
+    div.innerHTML = `
+      <div style="position:relative;">
+        ${thumbHtml}
+        <div class="product-thumb-placeholder" id="ph-${i}" style="${placeholderStyle}" title="點擊輸入圖片網址">
+          🖼️
+          <input type="text" style="position:absolute;inset:0;opacity:0;cursor:pointer;" onfocus="promptImgUrl(${i})" readonly>
+        </div>
+      </div>
+      <div class="product-body">
+        <div class="product-name-row">
+          <textarea class="product-name-input" rows="2" onchange="products[${i}].name=this.value">${escHtml(p.name)}</textarea>
+        </div>
+        <div class="product-meta">
+          <span class="price-prefix">NT$</span>
+          <input class="price-input" type="number" value="${p.price}" onchange="products[${i}].price=parseFloat(this.value)||0">
+          <span style="font-size:11px; color:var(--sub);">｜</span>
+          <span class="link-badge ${p.link ? 'link-ok' : 'link-missing'}">${p.link ? '✅ 分潤連結' : '⚠️ 缺連結'}</span>
+          ${p.link ? `<input class="link-input" value="${escHtml(p.link)}" onchange="products[${i}].link=this.value" title="分潤連結">` : `<input class="link-input" placeholder="貼上分潤連結" onchange="products[${i}].link=this.value; renderProducts();">`}
+        </div>
+
+        <div class="tag-section">
+          <div class="tag-section-label">性別受眾</div>
+          <div class="chip-row">
+            ${GENDER_OPTIONS.map(g => `<div class="chip ${p.gender===g.val?'on-gender':''}" onclick="toggleGender(${i},'${g.val}')">${g.label}</div>`).join('')}
+          </div>
+        </div>
+        <div class="tag-section">
+          <div class="tag-section-label">年齡受眾</div>
+          <div class="chip-row">
+            ${AGE_OPTIONS.map(a => `<div class="chip ${p.age===a.val?'on-age':''}" onclick="toggleAge(${i},'${a.val}')">${a.label}</div>`).join('')}
+          </div>
+        </div>
+        <div class="tag-section">
+          <div class="tag-section-label">興趣分類（可複選）</div>
+          <div class="chip-row">
+            ${INTEREST_OPTIONS.map(it => `<div class="chip ${p.interests.includes(it.val)?'on-interest':''}" onclick="toggleInterest(${i},'${it.val}')">${it.label}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="row-actions">
+        <button class="btn-exclude" onclick="toggleExclude(${i})">${p.excluded ? '✓ 恢復' : '略過'}</button>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+  updateCounts();
+}
+
+function escHtml(s) {
+  return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggleGender(i, val) { products[i].gender = products[i].gender === val ? '' : val; rerenderRow(i); }
+function toggleAge(i, val) { products[i].age = products[i].age === val ? '' : val; rerenderRow(i); }
+function toggleInterest(i, val) {
+  const arr = products[i].interests;
+  const idx = arr.indexOf(val);
+  idx === -1 ? arr.push(val) : arr.splice(idx, 1);
+  rerenderRow(i);
+}
+function toggleExclude(i) { products[i].excluded = !products[i].excluded; rerenderRow(i); updateCounts(); }
+
+function rerenderRow(i) {
+  const p = products[i];
+  // 只更新 chip 狀態，避免整個 list 重渲導致失焦
+  const row = document.getElementById(`row-${i}`);
+  if (!row) return;
+  row.className = 'product-row' + (p.excluded ? ' excluded' : '');
+  row.querySelectorAll('.chip').forEach(chip => {
+    const val = chip.innerText; // 用 onclick 的 data 比對
+  });
+  // 重新渲染 chip 區塊
+  const tagSections = row.querySelectorAll('.tag-section');
+  if (tagSections[0]) tagSections[0].querySelector('.chip-row').innerHTML =
+    GENDER_OPTIONS.map(g => `<div class="chip ${p.gender===g.val?'on-gender':''}" onclick="toggleGender(${i},'${g.val}')">${g.label}</div>`).join('');
+  if (tagSections[1]) tagSections[1].querySelector('.chip-row').innerHTML =
+    AGE_OPTIONS.map(a => `<div class="chip ${p.age===a.val?'on-age':''}" onclick="toggleAge(${i},'${a.val}')">${a.label}</div>`).join('');
+  if (tagSections[2]) tagSections[2].querySelector('.chip-row').innerHTML =
+    INTEREST_OPTIONS.map(it => `<div class="chip ${p.interests.includes(it.val)?'on-interest':''}" onclick="toggleInterest(${i},'${it.val}')">${it.label}</div>`).join('');
+  updateCounts();
+}
+
+function updateCounts() {
+  const active = products.filter(p => !p.excluded);
+  document.getElementById('totalCount').innerText = products.length;
+  document.getElementById('selectedCount').innerText = active.length;
+  document.getElementById('submitCount').innerText = active.length;
+}
+
+function promptImgUrl(i) {
+  const url = prompt('貼上商品圖片網址（右鍵蝦皮圖片 → 複製圖片網址）：');
+  if (url) { products[i].imgUrl = url; renderProducts(); }
+}
+
+// ── 套用標籤到全部 ──
+function applyTagsToAll() {
+  if (!products.length) return;
+  // 抓第一筆有標籤的當範本
+  const template = products.find(p => p.gender || p.age || p.interests.length);
+  if (!template) { showToast('⚠️ 請先為第一個商品設定標籤再套用'); return; }
+  products.forEach(p => {
+    if (!p.excluded) {
+      p.gender = template.gender;
+      p.age = template.age;
+      p.interests = [...template.interests];
+    }
+  });
+  renderProducts();
+  showToast('✅ 標籤已套用到所有商品！');
+}
+
+// ── 組合標籤字串 ──
+function buildTagString(p) {
+  const parts = [];
+  const gMap = { female: '女生', male: '男生', all: '' };
+  const aMap = { student: '學生', '20-30': '20-30', '30-40': '30-40', '40': '40', all: '' };
+  if (p.gender && gMap[p.gender]) parts.push(gMap[p.gender]);
+  if (p.age && aMap[p.age]) parts.push(aMap[p.age]);
+  parts.push(...p.interests);
+  return parts.join('、');
+}
+
+// ── 送出到試算表 ──
+async function submitAll() {
+  if (!sheetUrl) { showToast('⚠️ 請先在 Step 1 設定試算表 Script 網址！'); return; }
+  const toSubmit = products.filter(p => !p.excluded);
+  if (!toSubmit.length) { showToast('⚠️ 沒有要送出的商品'); return; }
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerText = '送出中...';
+
+  const bar = document.getElementById('progressBar');
+  const fill = document.getElementById('progressFill');
+  bar.style.display = 'block';
+  fill.style.width = '0%';
+
+  let successCount = 0;
+  for (let i = 0; i < toSubmit.length; i++) {
+    const p = toSubmit[i];
+    const row = {
+      名稱: p.name,
+      價格: p.price,
+      圖片網址: p.imgUrl,
+      連結: p.link,
+      標籤: buildTagString(p),
+    };
+    try {
+      await fetch(sheetUrl, {
+        method: 'POST',
+        body: JSON.stringify(row),
+      });
+      successCount++;
+    } catch(e) {
+      console.warn('送出失敗：', p.name, e);
+    }
+    fill.style.width = `${Math.round(((i + 1) / toSubmit.length) * 100)}%`;
+  }
+
+  btn.disabled = false;
+  btn.innerText = '🚀 批量送出到試算表';
+  showToast(`🎉 完成！成功送出 ${successCount} / ${toSubmit.length} 筆商品`);
+  setTimeout(() => { bar.style.display = 'none'; fill.style.width = '0%'; }, 3000);
+}
+
+// ── Toast ──
+let toastTimer;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.innerText = msg;
+  el.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.style.display = 'none', 3500);
+}
+</script>
+
+</body>
+</html>
