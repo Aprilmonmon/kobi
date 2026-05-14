@@ -960,6 +960,12 @@ async function init() {
 
     const params = new URLSearchParams(window.location.search);
     if (params.get('dream') === '1') window.switchPage('dreamPage');
+    else if (params.get('shop') === '1') {
+        window.switchPage('dreamPage');
+        setTimeout(() => {
+            document.getElementById('recommendContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 600);
+    }
     else if (params.get('draw') === '1') { window.switchPage('recordPage'); setTimeout(window.showFortune, 500); }
 }
 
