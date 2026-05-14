@@ -246,8 +246,8 @@ let pendingDeleteAchievedId = null; // 刪除時光寶盒用
 
 const fortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃","今日財運爆棚。✨\n🌈 幸運色：優雅正米色","摳比永遠支持你！🐹\n🌈 幸運色：摳比藍","省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠","理財是為了自由。🕊️\n🌈 幸運色：純淨白","夢想金庫長大中！📈\n🌈 幸運色：玫瑰金","錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅","控制物欲控制人生。🎮\n🌈 幸運色：經典黑","你是省錢高手！👏\n🌈 幸運色：珊瑚橘","記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅","絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金","小錢累積成大夢。🌊\n🌈 幸運色：天藍色","好事即將發生。🌈\n🌈 幸運色：彩虹色","今天會有意外小財。💰\n🌈 幸運色：檸檬黃"];
 const categories = {
-    save: ["薪水","獎金","投資","摳比紅包","其他"],
-    spend: ["吃喝費","治裝費","交通費","網路手機","玩耍費","金融保險","學習成長","醫療","其他"]
+    save: ["💼 每月薪水","🎊 意外之財","📈 錢生錢","🧧 摳比紅包","🛍️ 賣賣收入","💻 接案收入","💫 其他進帳"],
+    spend: ["🍜 吃吃喝喝","👗 穿搭戰利品","🚗 移動費用","📱 3C續命費","🎉 享樂基金","🛡️ 存錢保險","📚 充電學習","🏥 身體維修費","📦 進貨備貨","🏪 店舖雜支","🌀 其他雜雜"]
 };
 
 // ── UI 工具 ──
@@ -762,12 +762,12 @@ function matchProfile(productTags, profile) {
     if (!profile || !productTags) return true;
     const tags = productTags.split('、').map(t => t.trim());
     const genderMap = { female: '女生', male: '男生' };
-    const ageMap = { student: '學生', '20s': '20-30歲', '30s': '30-40歲', '40s': '40歲' };
-    // 有設定性別，就要有交集
+    const ageMap = { student: '學生', '20s': '20-30', '30s': '30-40', '40s': '40' };
+    // 性別篩選
     if (profile.gender && genderMap[profile.gender]) {
         if (!tags.some(t => t.includes(genderMap[profile.gender]))) return false;
     }
-    // 年齡有交集就顯示
+    // 年齡篩選（部分符合）
     if (profile.age && ageMap[profile.age]) {
         if (!tags.some(t => t.includes(ageMap[profile.age]))) return false;
     }
