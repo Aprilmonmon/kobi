@@ -862,7 +862,7 @@ function updateUI() {
 }
 
 // ── 福利社：讀取 CSV 並渲染 ──
-const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT0j5yh7aJ-a-ythzHyiIv1ehTVK56OqJu0rVknzbiErz8GH1WWcESof1_FcQqodFnicwh-MLVBcNmn/pub?output=csv";
+const SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vT0j5yh7aJ-a-ythzHyiIv1ehTVK56OqJu0rVknzbiErz8GH1WWcESof1_FcQqodFnicwh-MLVBcNmn/pub?gid=0&single=true&output=csv";
 
 function parseCSV(text) {
     const lines = text.trim().split('\n');
@@ -884,18 +884,32 @@ function parseCSV(text) {
 }
 
 function matchProfile(productTags, profile) {
-    if (!profile || !productTags) return true;
-    const tags = productTags.split('、').map(t => t.trim());
+    if (!productTags) return true;
+    if (!profile || !profile.setupDone) return true;
+    const tags = productTags.split(/[、,]/).map(t => t.trim().toLowerCase());
+
     const genderMap = { female: '女生', male: '男生' };
     const ageMap = { student: '學生', '20s': '20-30', '30s': '30-40', '40s': '40' };
-    // 性別篩選
-    if (profile.gender && genderMap[profile.gender]) {
-        if (!tags.some(t => t.includes(genderMap[profile.gender]))) return false;
+
+    // 性別：只有在標籤明確包含「男生」或「女生」時才篩，沒標性別的商品全部顯示
+    const hasGenderTag = tags.some(t => t === '女生' || t === '男生');
+    if (hasGenderTag && profile.gender && genderMap[profile.gender]) {
+        if (!tags.includes(genderMap[profile.gender])) return false;
     }
-    // 年齡篩選（部分符合）
-    if (profile.age && ageMap[profile.age]) {
+
+    // 年齡：同上，沒標年齡的不篩
+    const ageKeywords = ['學生', '20-30', '30-40', '40'];
+    const hasAgeTag = tags.some(t => ageKeywords.includes(t));
+    if (hasAgeTag && profile.age && ageMap[profile.age]) {
         if (!tags.some(t => t.includes(ageMap[profile.age]))) return false;
     }
+
+    // 興趣：如果用戶有選興趣，商品標籤要至少符合其中一個
+    if (profile.interests && profile.interests.length > 0) {
+        const hasInterestTag = tags.some(t => profile.interests.includes(t));
+        if (!hasInterestTag) return false;
+    }
+
     return true;
 }
 
