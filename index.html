@@ -131,6 +131,7 @@
     <div class="kobi-container" id="kobiBtn">
         <img src="kobi-logo.png" alt="KOBI" style="width:85%;">
     </div>
+    <div style="font-size:12px; color:var(--line-brown); margin-top:-8px; margin-bottom:12px; text-align:center; cursor:pointer;" id="fortuneHint">🐹 點我抽今日運勢！</div>
     <div class="balance-card">
         <div style="font-size:14px; color:#999;">本期金庫餘額</div>
         <div id="mainBalance" style="font-size:32px; font-weight:bold; color:var(--primary-blue);">$0</div>
@@ -141,7 +142,15 @@
     </div>
     <button id="openRecordModalBtn" class="btn-main">＋ 新增一筆紀錄</button>
     <div style="font-size:11px; color:#ccc; text-align:center; margin-top:8px;">💡 溫馨提示：點擊下方紀錄項目即可刪除資料</div>
-    <div id="listItems" style="width:100%; margin-top:20px;"></div>
+    <div id="recordSummary" style="width:100%; background:white; border-radius:16px; border:1px solid #eee; padding:12px 16px; margin-top:16px; box-sizing:border-box; display:flex; justify-content:space-around; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+        <div><div style="font-size:11px; color:#999; margin-bottom:2px;">本期收入</div><div id="summaryIncome" style="font-size:15px; font-weight:bold; color:#77b5fe;">$0</div></div>
+        <div style="width:1px; background:#eee;"></div>
+        <div><div style="font-size:11px; color:#999; margin-bottom:2px;">本期支出</div><div id="summaryExpense" style="font-size:15px; font-weight:bold; color:#9E7E6B;">$0</div></div>
+        <div style="width:1px; background:#eee;"></div>
+        <div><div style="font-size:11px; color:#999; margin-bottom:2px;">結餘</div><div id="summaryNet" style="font-size:15px; font-weight:bold;">$0</div></div>
+    </div>
+    <div id="listItems" style="width:100%; margin-top:12px;"></div>
+    <div id="showMoreRecordsBtn" style="display:none; text-align:center; padding:10px; color:var(--line-brown); font-size:13px; cursor:pointer; font-weight:bold;"></div>
 
     <!-- 歷史紀錄區塊 -->
     <div class="history-section">
@@ -174,7 +183,10 @@
 <div id="shopPage" class="page">
     <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
         <b style="font-size:18px;">🛍️ 摳比福利社</b>
-        <div id="profileEditBtn" style="font-size:12px; color:var(--line-brown); cursor:pointer;">⚙️ 修改喜好</div>
+        <div style="display:flex; gap:10px; align-items:center;">
+            <div id="refreshProductsBtn" style="font-size:12px; color:var(--primary-blue); cursor:pointer; font-weight:bold;">🔄 換一批</div>
+            <div id="profileEditBtn" style="font-size:12px; color:var(--line-brown); cursor:pointer;">⚙️ 修改喜好</div>
+        </div>
     </div>
     <div id="recommendContainer" style="width:100%;">
         <div style="color:#ccc; text-align:center; padding:20px; border:1px dashed #ccc; border-radius:15px;">商品載入中...</div>
@@ -465,9 +477,27 @@ async function executeSettle() {
         closeModal('settleModal');
         updateUI();
 
+        const shareMsg = `🐹 摳比結帳報告！\n收入 $${totalIncome.toLocaleString()} / 支出 $${totalExpense.toLocaleString()}\n已存入夢想基金 $${transfer.toLocaleString()}💰\n用摳比一起記帳吧！`;
         document.getElementById('fortuneText').innerText = `🎉 結算成功！\n摳比已幫你將 $${transfer.toLocaleString()} \n存入夢想金庫囉！\n本期紀錄已封存，可在下方歷史查看。\n新的週期也要加油喔！🐹`;
         document.getElementById('fortuneBtn').innerText = "收到！(๑•̀ㅂ•́)و";
         document.getElementById('cancelDeleteBtn').style.display = 'none';
+        // 顯示 LINE 分享按鈕
+        let shareBtn = document.getElementById('lineShareBtn');
+        if (!shareBtn) {
+            shareBtn = document.createElement('button');
+            shareBtn.id = 'lineShareBtn';
+            shareBtn.style.cssText = 'width:100%; padding:12px; background:#06C755; color:white; border-radius:14px; border:none; font-weight:bold; cursor:pointer; margin-top:8px; font-size:14px;';
+            shareBtn.innerText = '📤 分享結算給朋友';
+            document.getElementById('fortuneModal').querySelector('.modal-content').appendChild(shareBtn);
+        }
+        shareBtn.style.display = 'block';
+        shareBtn.onclick = () => {
+            if (liff.isInClient()) {
+                liff.shareTargetPicker([{ type: "text", text: shareMsg }]).catch(() => {});
+            } else {
+                window.open(`https://line.me/R/msg/text/?${encodeURIComponent(shareMsg)}`, '_blank');
+            }
+        };
         openModal('fortuneModal');
     } catch(e) {
         showError("結算失敗：" + e.message + " (" + (e.code || "unknown") + ")");
@@ -546,7 +576,24 @@ async function executeDeleteAchieved() {
     showLoading(false);
 }
 
-// ── 實現夢想 ──
+// ── 實現夢想（加二次確認）──
+function askFulfillDream(id) {
+    const dream = dreams.find(d => d.id === id);
+    if (!dream) return;
+    if (dreamFund < dream.target) {
+        document.getElementById('fortuneText').innerText = "🐹 摳比提醒：\n基金還不夠實現這個夢想喔！\n再加油存一點點！";
+        document.getElementById('fortuneBtn').innerText = "好喔！";
+        document.getElementById('cancelDeleteBtn').style.display = 'none';
+        openModal('fortuneModal');
+        return;
+    }
+    pendingDeleteDreamId = '__fulfill__' + id;
+    document.getElementById('fortuneText').innerText = `✨ 確定要實現這個夢想嗎？\n\n【${dream.name}】 $${dream.target.toLocaleString()}\n\n夢想基金將扣除此金額，並存入時光寶盒！`;
+    document.getElementById('fortuneBtn').innerText = "確定實現！🎉";
+    document.getElementById('cancelDeleteBtn').style.display = 'block';
+    openModal('fortuneModal');
+}
+
 async function fulfillDream(id) {
     const dream = dreams.find(d => d.id === id);
     if (!dream) return;
@@ -590,9 +637,17 @@ function resetFortuneModal() {
     pendingDeleteAchievedId = null;
     document.getElementById('fortuneBtn').innerText = "好喔！";
     document.getElementById('cancelDeleteBtn').style.display = 'none';
+    const shareBtn = document.getElementById('lineShareBtn');
+    if (shareBtn) shareBtn.style.display = 'none';
 }
 document.getElementById('fortuneBtn').addEventListener('click', () => {
     if (pendingDeleteId) executeDelete();
+    else if (pendingDeleteDreamId && pendingDeleteDreamId.startsWith('__fulfill__')) {
+        const id = pendingDeleteDreamId.replace('__fulfill__', '');
+        pendingDeleteDreamId = null;
+        closeModal('fortuneModal');
+        fulfillDream(id);
+    }
     else if (pendingDeleteDreamId) executeDeleteDream();
     else if (pendingDeleteAchievedId) executeDeleteAchieved();
     else closeModal('fortuneModal');
@@ -703,26 +758,49 @@ window.renderHistory = function() {
 };
 
 // ── 更新畫面 ──
+let showAllRecords = false;
+const RECORDS_PREVIEW = 10;
+
 function updateUI() {
-    const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
+    const totalIncomeCur = records.filter(r => r.type === 'save').reduce((a, r) => a + r.amount, 0);
+    const totalExpenseCur = records.filter(r => r.type === 'spend').reduce((a, r) => a + r.amount, 0);
+    const total = totalIncomeCur - totalExpenseCur;
     document.getElementById('mainBalance').innerText = `$${total.toLocaleString()}`;
     document.getElementById('dreamFundTotal').innerText = `$${dreamFund.toLocaleString()}`;
 
-    // 本期紀錄列表
+    // 收支小結
+    document.getElementById('summaryIncome').innerText = `$${totalIncomeCur.toLocaleString()}`;
+    document.getElementById('summaryExpense').innerText = `$${totalExpenseCur.toLocaleString()}`;
+    const netEl = document.getElementById('summaryNet');
+    netEl.innerText = `$${total.toLocaleString()}`;
+    netEl.style.color = total >= 0 ? '#77b5fe' : '#C0715A';
+
+    // 本期紀錄列表（含顯示更多）
     const list = document.getElementById('listItems');
     list.innerHTML = '';
-    const sorted = [...records].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+    const sorted = [...records].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const moreBtn = document.getElementById('showMoreRecordsBtn');
     if (!sorted.length) {
         list.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">本期尚無紀錄</div>';
+        moreBtn.style.display = 'none';
+    } else {
+        const toRender = showAllRecords ? sorted : sorted.slice(0, RECORDS_PREVIEW);
+        toRender.forEach(r => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.style.borderLeftColor = r.type === 'save' ? '#A2D2FF' : '#9E7E6B';
+            div.innerHTML = `<div><b>${r.category}</b> <small>${r.date}</small><br><span style="font-size:12px;color:#999;">${r.note || ''}</span></div><b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">${r.type==='save'?'+':'-'}$${r.amount.toLocaleString()}</b>`;
+            div.addEventListener('click', () => askDeleteRecord(r.id));
+            list.appendChild(div);
+        });
+        if (sorted.length > RECORDS_PREVIEW) {
+            moreBtn.style.display = 'block';
+            moreBtn.innerText = showAllRecords ? '▲ 收起' : `▼ 查看更多（共 ${sorted.length} 筆）`;
+            moreBtn.onclick = () => { showAllRecords = !showAllRecords; updateUI(); };
+        } else {
+            moreBtn.style.display = 'none';
+        }
     }
-    sorted.forEach(r => {
-        const div = document.createElement('div');
-        div.className = 'history-item';
-        div.style.borderLeftColor = r.type === 'save' ? '#A2D2FF' : '#9E7E6B';
-        div.innerHTML = `<div><b>${r.category}</b> <small>${r.date}</small><br><span style="font-size:12px;color:#999;">${r.note || ''}</span></div><b style="color:${r.type==='save'?'#77b5fe':'#9E7E6B'}">${r.type==='save'?'+':'-'}$${r.amount.toLocaleString()}</b>`;
-        div.addEventListener('click', () => askDeleteRecord(r.id));
-        list.appendChild(div);
-    });
 
     // 夢想清單
     const dc = document.getElementById('dreamContainer');
@@ -737,7 +815,7 @@ function updateUI() {
             <b>${d.name}</b> ($${d.target.toLocaleString()})
             <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
             <div style="font-size:12px;color:#999;text-align:right;">達成度 ${percent}% (點擊解鎖)</div>`;
-        card.addEventListener('click', () => fulfillDream(d.id));
+        card.addEventListener('click', () => askFulfillDream(d.id));
         card.querySelector('.del-btn').addEventListener('click', (e) => deleteDream(e, d.id));
         dc.appendChild(card);
     });
@@ -870,8 +948,10 @@ async function loadProducts() {
     }
 }
 
-// 修改喜好按鈕
-document.getElementById('profileEditBtn').addEventListener('click', () => {
+// 換一批商品按鈕
+document.getElementById('refreshProductsBtn').addEventListener('click', () => loadProducts());
+
+// 修改喜好按鈕document.getElementById('profileEditBtn').addEventListener('click', () => {
     // 把現有設定填回去
     if (userProfile) {
         ['chipGender', 'chipAge'].forEach(groupId => {
@@ -884,14 +964,6 @@ document.getElementById('profileEditBtn').addEventListener('click', () => {
     }
     showProfileSetup();
 });
-
-// 儲存設定後重新載入商品
-const origSaveProfile = saveProfile;
-async function saveProfileAndReload(skipped) {
-    await saveProfile(skipped);
-    await loadProducts();
-}
-
 
 let userProfile = null;
 
@@ -929,12 +1001,13 @@ async function saveProfile(skipped = false) {
     hideProfileSetup();
 }
 
-document.getElementById('profileSaveBtn').addEventListener('click', async () => { await saveProfile(false); loadProducts(); });
-document.getElementById('profileSkipBtn').addEventListener('click', async () => { await saveProfile(true); loadProducts(); });
+document.getElementById('profileSaveBtn').addEventListener('click', async () => { await saveProfile(false); await loadProducts(); });
+document.getElementById('profileSkipBtn').addEventListener('click', async () => { await saveProfile(true); await loadProducts(); });
 initProfileChips();
 
 // ── 按鈕事件綁定 ──
 document.getElementById('kobiBtn').addEventListener('click', () => window.showFortune());
+document.getElementById('fortuneHint').addEventListener('click', () => window.showFortune());
 document.getElementById('settleGuideBtn').addEventListener('click', () => window.openSettleModal());
 document.getElementById('openRecordModalBtn').addEventListener('click', () => openModal('recordModal'));
 document.getElementById('openDreamModalBtn').addEventListener('click', () => openModal('dreamModal'));
