@@ -21,7 +21,7 @@
         .progress-bar { background: #eee; height: 14px; border-radius: 7px; margin: 12px 0; overflow: hidden; }
         .progress-fill { background: var(--primary-blue); height: 100%; width: 0%; transition: 0.8s; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 25px; border-radius: 30px; width: 85%; max-width: 320px; text-align: center; max-height: 85vh; overflow-y: auto; }
+        .modal-content { background: white; padding: 18px 20px; border-radius: 24px; width: 80%; max-width: 300px; text-align: center; max-height: 80vh; overflow-y: auto; }
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; font-family: inherit; }
         .btn-main { width: 100%; padding: 14px; background: var(--primary-blue); color: white; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
@@ -48,6 +48,17 @@
 
         #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; gap: 12px; }
         .loading-spinner { width: 48px; height: 48px; border: 5px solid var(--primary-blue); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+        /* 用戶輪廓設定頁 */
+        #profileSetup { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-color); z-index: 8000; overflow-y: auto; flex-direction: column; align-items: center; justify-content: center; padding: 30px 0; box-sizing: border-box; }
+        .setup-wrap { width: 85%; max-width: 320px; }
+        .setup-title { font-size: 22px; font-weight: bold; text-align: center; margin-bottom: 6px; }
+        .setup-sub { font-size: 13px; color: #aaa; text-align: center; margin-bottom: 28px; }
+        .setup-label { font-size: 14px; font-weight: bold; margin: 16px 0 8px; }
+        .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .chip { padding: 8px 14px; border-radius: 20px; border: 1.5px solid #ddd; font-size: 13px; cursor: pointer; background: white; color: var(--text-color); transition: 0.2s; user-select: none; }
+        .chip.selected { border-color: var(--primary-blue); background: var(--primary-blue); color: white; font-weight: bold; }
+        .chip-single.selected { border-color: var(--line-brown); background: var(--line-brown); color: white; font-weight: bold; }
         @keyframes spin { to { transform: rotate(360deg); } }
         #errorBanner { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #ff6b6b; color: white; padding: 12px 20px; border-radius: 12px; font-size: 13px; z-index: 9999; max-width: 85%; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
     </style>
@@ -58,6 +69,45 @@
 <div id="loadingOverlay">
     <div class="loading-spinner"></div>
     <div style="color: var(--line-brown); font-weight: bold;">摳比努力載入中...</div>
+</div>
+
+<!-- 用戶輪廓設定頁 -->
+<div id="profileSetup">
+    <div class="setup-wrap">
+        <div style="text-align:center; font-size:48px; margin-bottom:10px;">🐹</div>
+        <div class="setup-title">嗨！我是摳比</div>
+        <div class="setup-sub">讓摳比更了解你，才能給你最合適的推薦！</div>
+
+        <div class="setup-label">你的性別</div>
+        <div class="chip-group" id="chipGender">
+            <div class="chip chip-single" data-val="female">👩 女生</div>
+            <div class="chip chip-single" data-val="male">👨 男生</div>
+            <div class="chip chip-single" data-val="other">🌈 不透露</div>
+        </div>
+
+        <div class="setup-label">你的年齡</div>
+        <div class="chip-group" id="chipAge">
+            <div class="chip chip-single" data-val="student">🎒 學生</div>
+            <div class="chip chip-single" data-val="20s">✨ 20-30歲</div>
+            <div class="chip chip-single" data-val="30s">💼 30-40歲</div>
+            <div class="chip chip-single" data-val="40s">🌿 40歲以上</div>
+        </div>
+
+        <div class="setup-label">你喜歡什麼？（可複選）</div>
+        <div class="chip-group" id="chipInterests">
+            <div class="chip" data-val="fashion">👗 穿搭</div>
+            <div class="chip" data-val="beauty">💄 美妝保養</div>
+            <div class="chip" data-val="3c">📱 3C數位</div>
+            <div class="chip" data-val="food">🍜 美食</div>
+            <div class="chip" data-val="travel">✈️ 旅遊</div>
+            <div class="chip" data-val="home">🏠 居家生活</div>
+            <div class="chip" data-val="sport">🏃 運動健身</div>
+            <div class="chip" data-val="book">📚 書籍學習</div>
+        </div>
+
+        <button id="profileSaveBtn" class="btn-main" style="margin-top:28px;">開始使用摳比！🐹</button>
+        <div id="profileSkipBtn" style="text-align:center; margin-top:12px; color:#bbb; font-size:13px; cursor:pointer;">先跳過，之後再設定</div>
+    </div>
 </div>
 
 <div class="tab-group">
@@ -132,7 +182,7 @@
     <select id="recordCategory"></select>
     <input type="number" id="recordAmount" placeholder="金額">
     <textarea id="recordNote" placeholder="備註一下..." rows="2"></textarea>
-    <button id="addRecordBtn" class="btn-main">存入金庫</button>
+    <button id="addRecordBtn" class="btn-main">確定</button>
     <button onclick="closeModal('recordModal')" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">取消</button>
 </div></div>
 
@@ -603,6 +653,47 @@ function updateUI() {
     window.renderHistory();
 }
 
+// ── 用戶輪廓設定 ──
+let userProfile = null;
+
+function showProfileSetup() {
+    document.getElementById('profileSetup').style.display = 'flex';
+}
+function hideProfileSetup() {
+    document.getElementById('profileSetup').style.display = 'none';
+}
+
+function initProfileChips() {
+    ['chipGender', 'chipAge'].forEach(groupId => {
+        document.getElementById(groupId).querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                document.getElementById(groupId).querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+                chip.classList.add('selected');
+            });
+        });
+    });
+    document.getElementById('chipInterests').querySelectorAll('.chip').forEach(chip => {
+        chip.addEventListener('click', () => chip.classList.toggle('selected'));
+    });
+}
+
+async function saveProfile(skipped = false) {
+    const gender = skipped ? null : (document.querySelector('#chipGender .chip.selected')?.dataset.val || null);
+    const age = skipped ? null : (document.querySelector('#chipAge .chip.selected')?.dataset.val || null);
+    const interests = skipped ? [] : [...document.querySelectorAll('#chipInterests .chip.selected')].map(c => c.dataset.val);
+    userProfile = { gender, age, interests, setupDone: true };
+    try {
+        await setDoc(doc(db, "users", userId), { profile: userProfile }, { merge: true });
+    } catch(e) {
+        showError("儲存設定失敗：" + e.message);
+    }
+    hideProfileSetup();
+}
+
+document.getElementById('profileSaveBtn').addEventListener('click', () => saveProfile(false));
+document.getElementById('profileSkipBtn').addEventListener('click', () => saveProfile(true));
+initProfileChips();
+
 // ── 初始化 ──
 async function init() {
     showLoading(true);
@@ -620,6 +711,16 @@ async function init() {
         userId = "test-user-local";
     }
     await loadAllData();
+
+    // 判斷是否需要顯示輪廓設定頁
+    const userSnap = await getDoc(doc(db, "users", userId));
+    const existingProfile = userSnap.exists() ? userSnap.data().profile : null;
+    if (!existingProfile || !existingProfile.setupDone) {
+        showProfileSetup();
+    } else {
+        userProfile = existingProfile;
+    }
+
     const params = new URLSearchParams(window.location.search);
     if (params.get('dream') === '1') window.switchPage('dreamPage');
     else if (params.get('draw') === '1') { window.switchPage('recordPage'); setTimeout(window.showFortune, 500); }
