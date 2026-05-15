@@ -59,14 +59,16 @@
         .no-history { color: #ccc; text-align: center; padding: 20px; font-size: 14px; }
 
         /* 福利社商品卡片 */
-        .product-card { background: white; border-radius: 15px; border: 1px solid #eee; margin-bottom: 12px; width: 100%; box-sizing: border-box; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.04); display: flex; gap: 12px; padding: 12px; }
-        .product-img { width: 80px; height: 80px; object-fit: cover; border-radius: 10px; background: #f5f5f5; flex-shrink: 0; }
+        .product-card { background: white; border-radius: 18px; border: none; margin-bottom: 14px; width: 100%; box-sizing: border-box; overflow: hidden; box-shadow: 0 3px 14px rgba(0,0,0,0.08); display: flex; gap: 12px; padding: 14px; transition: 0.15s; }
+        .product-card:active { transform: scale(0.98); }
+        .product-img { width: 88px; height: 88px; object-fit: cover; border-radius: 12px; background: #f5f5f5; flex-shrink: 0; }
         .product-info { flex: 1; display: flex; flex-direction: column; justify-content: space-between; min-width: 0; }
-        .product-name { font-size: 13px; font-weight: bold; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-        .product-price { font-size: 16px; font-weight: bold; color: var(--primary-blue); margin: 4px 0; }
-        .product-actions { display: flex; gap: 6px; margin-top: 4px; }
-        .btn-buy { flex: 1; padding: 7px; background: #FF6B35; color: white; border: none; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; display: block; }
-        .btn-dream-add { flex: 1; padding: 7px; background: white; color: var(--line-brown); border: 1.5px solid var(--line-brown); border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .product-name { font-size: 13px; font-weight: 600; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; color: #4A3F38; }
+        .product-price { font-size: 17px; font-weight: bold; color: #E07B6A; margin: 5px 0 2px; }
+        .product-price-label { font-size: 10px; color: #bbb; margin-bottom: 6px; }
+        .product-actions { display: flex; gap: 6px; margin-top: 6px; }
+        .btn-buy { flex: 1.6; padding: 9px 6px; background: linear-gradient(135deg, #FF8C5A, #FF6B35); color: white; border: none; border-radius: 10px; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center; text-decoration: none; display: block; letter-spacing: 0.3px; box-shadow: 0 3px 8px rgba(255,107,53,0.3); }
+        .btn-dream-add { flex: 1; padding: 9px 6px; background: white; color: var(--line-brown); border: 1.5px solid #e8ddd8; border-radius: 10px; font-size: 11px; font-weight: bold; cursor: pointer; }
 
         #loadingOverlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.85); z-index: 9999; justify-content: center; align-items: center; flex-direction: column; gap: 12px; }
         .loading-spinner { width: 48px; height: 48px; border: 5px solid var(--primary-blue); border-top-color: transparent; border-radius: 50%; animation: spin 0.8s linear infinite; }
@@ -634,13 +636,31 @@ window.openSettleModal = function() {
     const total = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
     document.getElementById('settlePreview').innerText = `$${total.toLocaleString()}`;
     document.getElementById('transferAmount').value = total > 0 ? total : 0;
+    if (total <= 0) {
+        document.getElementById('settlePreview').style.color = '#E07B6A';
+    } else {
+        document.getElementById('settlePreview').style.color = 'var(--primary-blue)';
+    }
     openModal('settleModal');
 };
 
 async function executeSettle() {
     const transfer = parseFloat(document.getElementById('transferAmount').value) || 0;
+    const currentBalance = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
     if (!records.length) {
         showError("本期沒有任何紀錄，無法結算");
+        return;
+    }
+    if (currentBalance <= 0) {
+        showError("本期結餘為負數或零，無法存入夢想基金喔！");
+        return;
+    }
+    if (transfer <= 0) {
+        showError("請輸入要存入夢想基金的金額");
+        return;
+    }
+    if (transfer > currentBalance) {
+        showError(`最多只能存入 $${currentBalance.toLocaleString()}，不能超過本期結餘喔！`);
         return;
     }
     showLoading(true);
@@ -1188,10 +1208,13 @@ async function loadProducts() {
                 <img class="product-img" src="${p['圖片網址'] || ''}" alt="${p['名稱']}" onerror="this.style.background='#f0f0f0'; this.src=''">
                 <div class="product-info">
                     <div class="product-name">${p['名稱']}</div>
-                    <div class="product-price">NT$ ${parseInt(p['價格']).toLocaleString()}</div>
+                    <div>
+                        <div class="product-price">NT$ ${parseInt(p['價格']).toLocaleString()}</div>
+                        <div class="product-price-label">摳比嚴選 · 點擊查看詳情</div>
+                    </div>
                     <div class="product-actions">
-                        <a class="btn-buy" href="${p['連結']}" target="_blank">🛒 去購買</a>
-                        <button class="btn-dream-add">＋ 加入夢想</button>
+                        <a class="btn-buy" href="${p['連結']}" target="_blank">👀 去看看</a>
+                        <button class="btn-dream-add">🌟 加入夢想</button>
                     </div>
                 </div>`;
             // 加入夢想清單
