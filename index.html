@@ -6,25 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>摳比 KOBI - 夢想金庫</title>
     <style>
-        :root { --bg-color: #FAF9F6; --primary-blue: #A2D2FF; --line-brown: #9E7E6B; --text-color: #6D5B4F; }
-        body { font-family: sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
-        .tab-group { display: flex; width: 100%; background: white; border-bottom: 2px solid var(--line-brown); position: sticky; top: 0; z-index: 1000; }
-        .tab-btn { flex: 1; padding: 18px 10px; text-align: center; font-weight: bold; cursor: pointer; color: #ccc; transition: 0.3s; }
-        .tab-btn.active { color: var(--line-brown); border-bottom: 4px solid var(--line-brown); }
+        :root { 
+            --bg-color: #FAF9F6; 
+            --primary-blue: #A2D2FF; 
+            --primary-blue-dark: #6DB8F5;
+            --line-brown: #9E7E6B; 
+            --text-color: #6D5B4F;
+            --card-shadow: 0 2px 12px rgba(0,0,0,0.07);
+        }
+        body { font-family: 'Helvetica Neue', sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+        .tab-group { display: flex; width: 100%; background: white; border-bottom: 2px solid #f0ebe7; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .tab-btn { flex: 1; padding: 16px 10px; text-align: center; font-weight: bold; cursor: pointer; color: #ccc; transition: 0.2s; font-size: 13px; }
+        .tab-btn.active { color: var(--line-brown); border-bottom: 3px solid var(--line-brown); }
         .page { display: none; width: 90%; max-width: 350px; padding: 20px 0; flex-direction: column; align-items: center; }
         .page.active { display: flex !important; }
-        .kobi-container { width: 120px; height: 120px; background: #fff; border: 4px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 15px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; }
-        .balance-card { background: white; padding: 15px; border-radius: 20px; border: 2px solid var(--line-brown); text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 15px; }
-        .settle-guide { width: 100%; background: #FFF4E0; border: 1px dashed #FFB7B2; border-radius: 12px; padding: 10px; margin-bottom: 20px; font-size: 13px; color: #9E7E6B; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .history-item { background: white; padding: 10px 15px; border-radius: 12px; margin-bottom: 8px; width: 100%; box-sizing: border-box; border-left: 5px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-size: 14px; cursor: pointer; }
-        .dream-card { background: white; border-radius: 15px; padding: 15px; width: 100%; border: 1px solid #ddd; margin-bottom: 12px; box-sizing: border-box; cursor: pointer; position: relative; }
-        .progress-bar { background: #eee; height: 14px; border-radius: 7px; margin: 12px 0; overflow: hidden; }
-        .progress-fill { background: var(--primary-blue); height: 100%; width: 0%; transition: 0.8s; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 2000; justify-content: center; align-items: center; }
-        .modal-content { background: white; padding: 18px 20px; border-radius: 24px; width: 80%; max-width: 300px; text-align: center; max-height: 80vh; overflow-y: auto; }
-        input, select, textarea { width: 100%; padding: 10px 12px; margin: 6px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 15px; font-family: inherit; }
+        .kobi-container { width: 110px; height: 110px; background: #fff; border: 3px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; transition: transform 0.15s; }
+        .kobi-container:active { transform: scale(0.95); }
+        .balance-card { background: white; padding: 16px; border-radius: 20px; border: none; text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 14px; box-shadow: var(--card-shadow); }
+        .settle-guide { width: 100%; background: linear-gradient(135deg, #FFF4E0, #FFE8D6); border: none; border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #9E7E6B; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: var(--card-shadow); }
+        .history-item { background: white; padding: 12px 15px; border-radius: 14px; margin-bottom: 8px; width: 100%; box-sizing: border-box; border-left: 4px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-size: 14px; cursor: pointer; box-shadow: 0 1px 6px rgba(0,0,0,0.05); transition: 0.15s; }
+        .history-item:active { transform: scale(0.98); }
+        .dream-card { background: white; border-radius: 18px; padding: 16px; width: 100%; border: none; margin-bottom: 12px; box-sizing: border-box; cursor: pointer; position: relative; box-shadow: var(--card-shadow); }
+        .progress-bar { background: #f0f0f0; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; }
+        .progress-fill { background: linear-gradient(90deg, var(--primary-blue), var(--primary-blue-dark)); height: 100%; width: 0%; transition: 0.8s; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.55); z-index: 2000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 20px 22px; border-radius: 26px; width: 82%; max-width: 320px; text-align: center; max-height: 82vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.18); }
+        input, select, textarea { width: 100%; padding: 11px 14px; margin: 6px 0; border: 1.5px solid #eee; border-radius: 12px; box-sizing: border-box; font-size: 15px; font-family: inherit; background: #fafafa; transition: border 0.2s; }
+        input:focus, select:focus, textarea:focus { border-color: var(--primary-blue-dark); outline: none; background: white; }
         input[type="date"] { font-size: 14px; }
-        .btn-main { width: 100%; padding: 14px; background: var(--primary-blue); color: white; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-main { width: 100%; padding: 15px; background: linear-gradient(135deg, var(--primary-blue), var(--primary-blue-dark)); color: white; border-radius: 14px; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 15px; letter-spacing: 0.3px; transition: 0.15s; }
+        .btn-main:active { transform: scale(0.98); opacity: 0.9; }
 
         /* 歷史紀錄區塊 */
         .history-section { width: 100%; margin-top: 30px; }
@@ -140,8 +151,23 @@
         <span>✨ 週期結束了？快來結算存基金！</span>
         <b style="color:#FFB7B2;">GO ></b>
     </div>
-    <button id="openRecordModalBtn" class="btn-main">＋ 新增一筆紀錄</button>
-    <div style="font-size:11px; color:#ccc; text-align:center; margin-top:8px;">💡 溫馨提示：點擊下方紀錄項目即可刪除資料</div>
+    <button id="openRecordModalBtn" class="btn-main" style="font-size:17px; padding:18px; border-radius:18px; box-shadow:0 4px 14px rgba(162,210,255,0.5); margin-bottom:4px;">＋ 記一筆</button>
+    <div style="font-size:11px; color:#ccc; text-align:center; margin-top:6px; margin-bottom:4px;">💡 點擊下方紀錄可以編輯或刪除</div>
+    <!-- 今日/本週快速摘要 -->
+    <div id="quickSummary" style="width:100%; display:flex; gap:8px; margin-top:12px; margin-bottom:4px;">
+        <div style="flex:1; background:white; border-radius:14px; padding:10px 12px; text-align:center; box-shadow:0 1px 6px rgba(0,0,0,0.05);">
+            <div style="font-size:10px; color:#bbb; margin-bottom:2px;">今日支出</div>
+            <div id="todayExpense" style="font-size:14px; font-weight:bold; color:#9E7E6B;">$0</div>
+        </div>
+        <div style="flex:1; background:white; border-radius:14px; padding:10px 12px; text-align:center; box-shadow:0 1px 6px rgba(0,0,0,0.05);">
+            <div style="font-size:10px; color:#bbb; margin-bottom:2px;">本週支出</div>
+            <div id="weekExpense" style="font-size:14px; font-weight:bold; color:#9E7E6B;">$0</div>
+        </div>
+        <div style="flex:1; background:white; border-radius:14px; padding:10px 12px; text-align:center; box-shadow:0 1px 6px rgba(0,0,0,0.05);">
+            <div style="font-size:10px; color:#bbb; margin-bottom:2px;">本週筆數</div>
+            <div id="weekCount" style="font-size:14px; font-weight:bold; color:var(--primary-blue-dark);">0筆</div>
+        </div>
+    </div>
     <div id="recordSummary" style="width:100%; background:white; border-radius:16px; border:1px solid #eee; padding:12px 16px; margin-top:16px; box-sizing:border-box; display:flex; justify-content:space-around; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,0.04);">
         <div><div style="font-size:11px; color:#999; margin-bottom:2px;">本期收入</div><div id="summaryIncome" style="font-size:15px; font-weight:bold; color:#77b5fe;">$0</div></div>
         <div style="width:1px; background:#eee;"></div>
@@ -221,7 +247,21 @@
     <button onclick="closeModal('recordModal')" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">取消</button>
 </div></div>
 
-<div id="dreamModal" class="modal"><div class="modal-content">
+<div id="editRecordModal" class="modal"><div class="modal-content">
+    <h3>✏️ 編輯紀錄</h3>
+    <div style="display:flex; gap:6px; margin:6px 0;">
+        <select id="editRecordYear" style="flex:2; padding:10px 6px; font-size:14px; margin:0;"></select>
+        <select id="editRecordMonth" style="flex:1.5; padding:10px 6px; font-size:14px; margin:0;"></select>
+        <select id="editRecordDay" style="flex:1.5; padding:10px 6px; font-size:14px; margin:0;"></select>
+    </div>
+    <select id="editRecordType"><option value="spend">支出 / 購買</option><option value="save">收入 / 存錢</option></select>
+    <select id="editRecordCategory"></select>
+    <input type="number" id="editRecordAmount" placeholder="金額">
+    <textarea id="editRecordNote" placeholder="備註一下..." rows="2"></textarea>
+    <button id="saveEditRecordBtn" class="btn-main">儲存修改</button>
+    <button id="deleteEditRecordBtn" style="width:100%; padding:12px; background:none; border:1.5px solid #ffbbb0; color:#E07B6A; border-radius:14px; font-weight:bold; cursor:pointer; margin-top:8px;">🗑️ 刪除這筆</button>
+    <button onclick="closeModal('editRecordModal')" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">取消</button>
+</div></div>
     <h3>✨ 設定新夢想</h3>
     <input type="text" id="dreamName" placeholder="夢想名稱">
     <input type="number" id="dreamTarget" placeholder="目標金額">
@@ -263,7 +303,72 @@ let pendingDeleteId = null;      // 刪除紀錄用
 let pendingDeleteDreamId = null; // 刪除夢想用
 let pendingDeleteAchievedId = null; // 刪除時光寶盒用
 
-const fortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃","今日財運爆棚。✨\n🌈 幸運色：優雅正米色","摳比永遠支持你！🐹\n🌈 幸運色：摳比藍","省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠","理財是為了自由。🕊️\n🌈 幸運色：純淨白","夢想金庫長大中！📈\n🌈 幸運色：玫瑰金","錢變成了喜歡的樣子。🛍️\n🌈 幸運色：櫻桃紅","控制物欲控制人生。🎮\n🌈 幸運色：經典黑","你是省錢高手！👏\n🌈 幸運色：珊瑚橘","記帳的你特別帥美。😎\n🌈 幸運色：耀眼紅","絕對可以存到夢想金！🏆\n🌈 幸運色：冠軍金","小錢累積成大夢。🌊\n🌈 幸運色：天藍色","好事即將發生。🌈\n🌈 幸運色：彩虹色","今天會有意外小財。💰\n🌈 幸運色：檸檬黃"];
+// ── AI 個人化每日運勢 ──
+async function generateAIFortune() {
+    const today = new Date().toDateString();
+    const cacheKey = `kobi_fortune_${userId}_${today}`;
+    const cached = localStorage.getItem(cacheKey);
+    if (cached) return cached;
+
+    // 分析用戶資料
+    const totalBalance = records.reduce((acc, r) => r.type === 'save' ? acc + r.amount : acc - r.amount, 0);
+    const totalExpense = records.filter(r => r.type === 'spend').reduce((a, r) => a + r.amount, 0);
+    const topCategory = (() => {
+        const map = {};
+        records.filter(r => r.type === 'spend').forEach(r => map[r.category] = (map[r.category] || 0) + r.amount);
+        return Object.entries(map).sort((a,b) => b[1]-a[1])[0]?.[0] || null;
+    })();
+    const dreamName = dreams[0]?.name || null;
+    const dreamProgress = dreams[0] ? Math.round((dreamFund / dreams[0].target) * 100) : null;
+
+    const prompt = `你是「摳比 KOBI」，一隻可愛療癒的存錢小鼠，個性溫暖、幽默、偶爾毒舌但充滿鼓勵。
+
+用戶今日財務狀況：
+- 本期結餘：$${totalBalance.toLocaleString()}
+- 本期支出：$${totalExpense.toLocaleString()}
+- 最常花錢的類別：${topCategory || '尚無紀錄'}
+- 夢想目標：${dreamName || '尚未設定'}
+- 夢想達成度：${dreamProgress !== null ? dreamProgress + '%' : '尚未設定'}
+- 夢想基金：$${dreamFund.toLocaleString()}
+
+請根據以上資料，以摳比的口吻生成一則「今日運勢」，格式如下：
+
+第一行：一個有趣的運勢標題（含emoji，15字以內）
+第二行：空行
+第三行到第五行：針對用戶實際狀況的個人化鼓勵或建議（溫暖幽默，提到具體數字或夢想，2-3句話）
+最後一行：🌈 幸運色：（一個顏色）
+
+注意：不要加任何前言或解釋，直接輸出運勢內容。`;
+
+    try {
+        document.getElementById('fortuneText').innerText = '🐹 摳比正在觀星中⋯⋯';
+        openModal('fortuneModal');
+        document.getElementById('fortuneBtn').innerText = '好喔！';
+        document.getElementById('cancelDeleteBtn').style.display = 'none';
+
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'claude-sonnet-4-20250514',
+                max_tokens: 200,
+                messages: [{ role: 'user', content: prompt }]
+            })
+        });
+        const data = await res.json();
+        const fortune = data.content?.[0]?.text || getStaticFortune();
+        localStorage.setItem(cacheKey, fortune);
+        return fortune;
+    } catch(e) {
+        return getStaticFortune();
+    }
+}
+
+function getStaticFortune() {
+    const fortunes = ["財神爺今天住你家！☕\n🌈 幸運色：暖陽黃","今日財運爆棚。✨\n🌈 幸運色：優雅正米色","摳比永遠支持你！🐹\n🌈 幸運色：摳比藍","省下飲料錢，未來感謝你。🥤\n🌈 幸運色：湖水綠","理財是為了自由。🕊️\n🌈 幸運色：純淨白"];
+    const idx = new Date().getDate() % fortunes.length;
+    return fortunes[idx];
+}
 const categories = {
     save: ["💼 每月薪水","🎊 意外之財","📈 錢生錢","🧧 摳比紅包","🛍️ 賣賣收入","💻 接案收入","💫 其他進帳"],
     spend: ["🍜 吃吃喝喝","👗 穿搭戰利品","🚗 移動費用","📱 3C續命費","🎉 享樂基金","🛡️ 存錢保險","📚 充電學習","🏥 身體維修費","📦 進貨備貨","🏪 店舖雜支","🌀 其他雜雜"]
@@ -394,6 +499,9 @@ async function addRecord() {
         const ref = await addDoc(uCol("records"), { date, type, category, amount, note });
         records.push({ id: ref.id, date, type, category, amount, note });
         closeModal('recordModal');
+        // 清空欄位，讓 placeholder 重新出現
+        document.getElementById('recordAmount').value = '';
+        document.getElementById('recordNote').value = '';
         updateUI();
     } catch(e) {
         showError("新增失敗：" + e.message + " (" + (e.code || "unknown") + ")");
@@ -402,13 +510,90 @@ async function addRecord() {
 }
 document.getElementById('addRecordBtn').addEventListener('click', addRecord);
 
-// ── 刪除紀錄 ──
-function askDeleteRecord(id) {
-    pendingDeleteId = id;
+// ── 編輯紀錄（點擊開啟編輯，不只是刪除）──
+let editingRecordId = null;
+
+function openEditRecord(id) {
+    const r = records.find(x => x.id === id);
+    if (!r) return;
+    editingRecordId = id;
+
+    // 填入日期
+    const [y, m, d] = r.date.split('-');
+    const yEl = document.getElementById('editRecordYear');
+    const mEl = document.getElementById('editRecordMonth');
+    const dEl = document.getElementById('editRecordDay');
+    yEl.innerHTML = '';
+    const now = new Date();
+    for (let i = now.getFullYear(); i >= now.getFullYear() - 2; i--) {
+        yEl.innerHTML += `<option value="${i}" ${String(i)===y?'selected':''}>${i}年</option>`;
+    }
+    mEl.innerHTML = '';
+    for (let i = 1; i <= 12; i++) {
+        const mv = String(i).padStart(2,'0');
+        mEl.innerHTML += `<option value="${mv}" ${mv===m?'selected':''}>${i}月</option>`;
+    }
+    const maxDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+    dEl.innerHTML = '';
+    for (let i = 1; i <= maxDay; i++) {
+        const dv = String(i).padStart(2,'0');
+        dEl.innerHTML += `<option value="${dv}" ${dv===d?'selected':''}>${i}日</option>`;
+    }
+
+    document.getElementById('editRecordType').value = r.type;
+    updateEditCategories(r.category);
+    document.getElementById('editRecordAmount').value = r.amount;
+    document.getElementById('editRecordNote').value = r.note || '';
+
+    openModal('editRecordModal');
+}
+
+function updateEditCategories(selectedCat) {
+    const type = document.getElementById('editRecordType').value;
+    document.getElementById('editRecordCategory').innerHTML = categories[type].map(c =>
+        `<option value="${c}" ${c===selectedCat?'selected':''}>${c}</option>`
+    ).join('');
+}
+document.getElementById('editRecordType').addEventListener('change', () => updateEditCategories(null));
+
+document.getElementById('saveEditRecordBtn').addEventListener('click', async () => {
+    const r = records.find(x => x.id === editingRecordId);
+    if (!r) return;
+    const y = document.getElementById('editRecordYear').value;
+    const m = document.getElementById('editRecordMonth').value;
+    const d = document.getElementById('editRecordDay').value;
+    const updated = {
+        date: `${y}-${m}-${d}`,
+        type: document.getElementById('editRecordType').value,
+        category: document.getElementById('editRecordCategory').value,
+        amount: parseFloat(document.getElementById('editRecordAmount').value) || r.amount,
+        note: document.getElementById('editRecordNote').value,
+    };
+    showLoading(true);
+    try {
+        const { setDoc: sd } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+        await setDoc(uDoc("records/" + editingRecordId), updated);
+        Object.assign(r, updated);
+        closeModal('editRecordModal');
+        updateUI();
+    } catch(e) {
+        showError("編輯失敗：" + e.message);
+    }
+    showLoading(false);
+});
+
+document.getElementById('deleteEditRecordBtn').addEventListener('click', () => {
+    closeModal('editRecordModal');
+    pendingDeleteId = editingRecordId;
     document.getElementById('fortuneText').innerText = "🐹 摳比問你：確定要刪除這筆紀錄嗎？";
     document.getElementById('fortuneBtn').innerText = "確定刪除";
     document.getElementById('cancelDeleteBtn').style.display = 'block';
     openModal('fortuneModal');
+});
+
+// ── 刪除紀錄 ──
+function askDeleteRecord(id) {
+    openEditRecord(id);
 }
 async function executeDelete() {
     showLoading(true);
@@ -625,9 +810,12 @@ async function fulfillDream(id) {
 }
 
 // ── 運勢 ──
-window.showFortune = function() {
+window.showFortune = async function() {
     resetFortuneModal();
-    document.getElementById('fortuneText').innerText = fortunes[Math.floor(Math.random() * fortunes.length)];
+    const fortune = await generateAIFortune();
+    document.getElementById('fortuneText').innerText = fortune;
+    document.getElementById('fortuneBtn').innerText = '好喔！';
+    document.getElementById('cancelDeleteBtn').style.display = 'none';
     const modal = document.getElementById('fortuneModal');
     modal.style.display = 'flex';
 };
@@ -775,6 +963,19 @@ function updateUI() {
     netEl.innerText = `$${total.toLocaleString()}`;
     netEl.style.color = total >= 0 ? '#77b5fe' : '#C0715A';
 
+    // 今日/本週快速摘要
+    const todayStr = new Date().toISOString().slice(0,10);
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay());
+    const weekStartStr = weekStart.toISOString().slice(0,10);
+    const todayExp = records.filter(r => r.type==='spend' && r.date===todayStr).reduce((a,r)=>a+r.amount,0);
+    const weekRecs = records.filter(r => r.date >= weekStartStr);
+    const weekExp = weekRecs.filter(r => r.type==='spend').reduce((a,r)=>a+r.amount,0);
+    document.getElementById('todayExpense').innerText = `$${todayExp.toLocaleString()}`;
+    document.getElementById('weekExpense').innerText = `$${weekExp.toLocaleString()}`;
+    document.getElementById('weekCount').innerText = `${weekRecs.length}筆`;
+
     // 本期紀錄列表（含顯示更多）
     const list = document.getElementById('listItems');
     list.innerHTML = '';
@@ -808,13 +1009,21 @@ function updateUI() {
     if (!dreams.length) dc.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px;">點擊「+ 新目標」開始存錢吧！</div>';
     dreams.forEach(d => {
         const percent = Math.min((dreamFund / d.target) * 100, 100).toFixed(1);
+        const shortfall = Math.max(d.target - dreamFund, 0);
         const card = document.createElement('div');
         card.className = 'dream-card';
         card.innerHTML = `
             <div class="del-btn" style="position:absolute;top:5px;right:12px;color:#ccc;font-size:20px;padding:5px;">&times;</div>
-            <b>${d.name}</b> ($${d.target.toLocaleString()})
+            <b style="font-size:15px;">${d.name}</b>
+            <div style="font-size:12px; color:#bbb; margin-top:2px;">目標 $${d.target.toLocaleString()}</div>
             <div class="progress-bar"><div class="progress-fill" style="width:${percent}%"></div></div>
-            <div style="font-size:12px;color:#999;text-align:right;">達成度 ${percent}% (點擊解鎖)</div>`;
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px;">
+                <div style="font-size:12px; color:var(--primary-blue-dark); font-weight:bold;">已達成 ${percent}%</div>
+                ${shortfall > 0 
+                    ? `<div style="font-size:11px; color:#E07B6A; background:#FFF0EE; padding:3px 8px; border-radius:20px;">還差 $${shortfall.toLocaleString()}</div>`
+                    : `<div style="font-size:11px; color:#5DBE8A; background:#E8F8EF; padding:3px 8px; border-radius:20px;">🎉 可以解鎖了！</div>`
+                }
+            </div>`;
         card.addEventListener('click', () => askFulfillDream(d.id));
         card.querySelector('.del-btn').addEventListener('click', (e) => deleteDream(e, d.id));
         dc.appendChild(card);
