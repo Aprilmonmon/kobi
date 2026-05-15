@@ -248,7 +248,10 @@
 </div></div>
 
 <div id="editRecordModal" class="modal"><div class="modal-content">
-    <h3>✏️ 編輯紀錄</h3>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+        <h3 style="margin:0;">✏️ 編輯紀錄</h3>
+        <button id="deleteEditRecordBtn" style="background:none; border:none; cursor:pointer; font-size:22px; padding:4px 8px;" title="刪除這筆">🗑️</button>
+    </div>
     <div style="display:flex; gap:6px; margin:6px 0;">
         <select id="editRecordYear" style="flex:2; padding:10px 6px; font-size:14px; margin:0;"></select>
         <select id="editRecordMonth" style="flex:1.5; padding:10px 6px; font-size:14px; margin:0;"></select>
@@ -259,9 +262,10 @@
     <input type="number" id="editRecordAmount" placeholder="金額">
     <textarea id="editRecordNote" placeholder="備註一下..." rows="2"></textarea>
     <button id="saveEditRecordBtn" class="btn-main">儲存修改</button>
-    <button id="deleteEditRecordBtn" style="width:100%; padding:12px; background:none; border:1.5px solid #ffbbb0; color:#E07B6A; border-radius:14px; font-weight:bold; cursor:pointer; margin-top:8px;">🗑️ 刪除這筆</button>
     <button onclick="closeModal('editRecordModal')" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">取消</button>
 </div></div>
+
+<div id="dreamModal" class="modal"><div class="modal-content">
     <h3>✨ 設定新夢想</h3>
     <input type="text" id="dreamName" placeholder="夢想名稱">
     <input type="number" id="dreamTarget" placeholder="目標金額">
@@ -299,9 +303,25 @@ let dreams = [];
 let dreamFund = 0;
 let achievedDreams = [];
 let historyPeriods = [];  // 封存的歷史週期
-let pendingDeleteId = null;      // 刪除紀錄用
-let pendingDeleteDreamId = null; // 刪除夢想用
-let pendingDeleteAchievedId = null; // 刪除時光寶盒用
+let pendingDeleteId = null;
+let pendingDeleteDreamId = null;
+let pendingDeleteAchievedId = null;
+let pendingDeleteHistoryId = null;
+
+async function executeDeleteHistory() {
+    showLoading(true);
+    try {
+        await deleteDoc(uDoc("history/" + pendingDeleteHistoryId));
+        historyPeriods = historyPeriods.filter(h => h.id !== pendingDeleteHistoryId);
+        pendingDeleteHistoryId = null;
+        resetFortuneModal();
+        closeModal('fortuneModal');
+        window.renderHistory();
+    } catch(e) {
+        showError("刪除失敗：" + e.message);
+    }
+    showLoading(false);
+}
 
 // ── AI 個人化每日運勢 ──
 async function generateAIFortune() {
@@ -823,6 +843,7 @@ function resetFortuneModal() {
     pendingDeleteId = null;
     pendingDeleteDreamId = null;
     pendingDeleteAchievedId = null;
+    pendingDeleteHistoryId = null;
     document.getElementById('fortuneBtn').innerText = "好喔！";
     document.getElementById('cancelDeleteBtn').style.display = 'none';
     const shareBtn = document.getElementById('lineShareBtn');
@@ -838,6 +859,7 @@ document.getElementById('fortuneBtn').addEventListener('click', () => {
     }
     else if (pendingDeleteDreamId) executeDeleteDream();
     else if (pendingDeleteAchievedId) executeDeleteAchieved();
+    else if (pendingDeleteHistoryId) executeDeleteHistory();
     else closeModal('fortuneModal');
 });
 document.getElementById('cancelDeleteBtn').addEventListener('click', () => {
@@ -902,7 +924,10 @@ window.renderHistory = function() {
                         <span class="badge badge-fund">存基金 $${period.transferToFund.toLocaleString()}</span>
                     </div>
                 </div>
-                <span class="chevron" id="chev-${idx}">▼</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="del-history-btn" data-id="${period.id}" style="background:none; border:none; font-size:18px; cursor:pointer; color:#ddd; padding:4px;">🗑️</button>
+                    <span class="chevron" id="chev-${idx}">▼</span>
+                </div>
             </div>
             <div class="period-detail" id="pd-${idx}">
                 ${matchedItems.length ? matchedItems.map(item => `
@@ -921,6 +946,17 @@ window.renderHistory = function() {
             const chev = document.getElementById(`chev-${idx}`);
             detail.classList.toggle('open');
             chev.classList.toggle('open');
+        });
+
+        // 刪除歷史結算
+        card.querySelector('.del-history-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const hid = e.currentTarget.dataset.id;
+            pendingDeleteHistoryId = hid;
+            document.getElementById('fortuneText').innerText = `🐹 確定要刪除這期的結算紀錄嗎？\n（刪除後無法復原）`;
+            document.getElementById('fortuneBtn').innerText = "確定刪除";
+            document.getElementById('cancelDeleteBtn').style.display = 'block';
+            openModal('fortuneModal');
         });
 
         // 有關鍵字時預設展開
