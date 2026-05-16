@@ -167,8 +167,8 @@
 
 <div class="tab-group">
     <div id="btn-record" class="tab-btn active" onclick="switchPage('recordPage')">摳比記帳</div>
-    <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想金庫</div>
-    <div id="btn-shop" class="tab-btn" onclick="switchPage('shopPage')">🐹 摳比願望</div>
+    <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想盒</div>
+    <div id="btn-shop" class="tab-btn" onclick="switchPage('shopPage')">🐹 摳比的肚肚</div>
 </div>
 
 <div id="recordPage" class="page active">
@@ -230,15 +230,23 @@
 </div>
 
 <div id="dreamPage" class="page">
-    <div class="balance-card" style="background: var(--primary-blue); color: white; border:none;">
-        <div style="font-size:14px; opacity:0.8;">目前累積夢想基金</div>
-        <div id="dreamFundTotal" style="font-size:28px; font-weight:bold;">$0</div>
+    <div class="balance-card" style="background: linear-gradient(135deg, #A2D2FF, #6DB8F5); color: white; border:none;">
+        <div style="font-size:13px; opacity:0.85;">摳比替你守護的夢想基金</div>
+        <div id="dreamFundTotal" style="font-size:30px; font-weight:bold;">$0</div>
+        <div id="dreamKobiMsg" style="font-size:12px; margin-top:6px; opacity:0.9;">🐹 你的夢想，摳比都記得！</div>
     </div>
     <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
         <b style="font-size:18px;">☁️ 我的夢想清單</b>
         <button id="openDreamModalBtn" style="background:var(--line-brown); color:white; border:none; padding:8px 12px; border-radius:10px; font-size:12px; cursor:pointer;">+ 新目標</button>
     </div>
     <div id="dreamContainer" style="width:100%;"></div>
+    <!-- 夢想空白時的溫度 -->
+    <div id="dreamEmptyState" style="display:none; width:100%; text-align:center; padding:30px 20px;">
+        <div style="font-size:48px; margin-bottom:12px;">🌟</div>
+        <div style="font-size:15px; font-weight:bold; color:var(--line-brown); margin-bottom:8px;">你還沒有設定夢想</div>
+        <div style="font-size:13px; color:#bbb; line-height:1.8;">摳比在等你說出心裡的願望 🐹<br>不管是旅行、包包、還是小小的休息<br>都值得被認真對待 💙</div>
+        <div style="margin-top:16px; font-size:12px; color:#ccc;">點上方「+ 新目標」開始吧！</div>
+    </div>
     <hr style="width:100%; border:0.5px solid #eee; margin:25px 0;">
     <div style="width:100%; margin-bottom:20px;">
         <b style="font-size:18px;">📦 摳比的時光寶盒</b>
@@ -262,7 +270,7 @@
                 <div class="hunger-bar-wrap" style="position:relative;">
                     <div class="hunger-bar-fill low" id="hungerBarFill" style="width:30%;"></div>
                 </div>
-                <div style="font-size:10px; color:#bbb;">幫摳比看看 +15 · 每天自動 -10 ☁️</div>
+                <div style="font-size:10px; color:#bbb;">幫摳比看看 +15 💛</div>
             </div>
             <div id="refreshProductsBtn" style="font-size:11px; color:var(--primary-blue-dark); cursor:pointer; font-weight:bold; white-space:nowrap; align-self:flex-start;">🔄 換一批</div>
         </div>
@@ -468,13 +476,17 @@ function showKobiSpeech() {
 // ── 飢餓條系統 ──
 function getHungerLevel() {
     const key = `kobi_hunger_${userId}`;
-    const data = JSON.parse(localStorage.getItem(key) || '{"level":30,"lastFed":""}');
-    // 每過一天自然扣10%
-    const today = new Date().toISOString().slice(0,10);
-    if (data.lastFed && data.lastFed !== today) {
-        const days = Math.floor((new Date(today) - new Date(data.lastFed)) / 86400000);
-        data.level = Math.max(5, data.level - days * 10);
-        data.lastFed = today;
+    const data = JSON.parse(localStorage.getItem(key) || '{"level":100,"lastChecked":""}');
+    const now = Date.now();
+    if (data.lastChecked) {
+        const hoursElapsed = Math.floor((now - data.lastChecked) / 3600000);
+        if (hoursElapsed > 0) {
+            data.level = Math.max(5, data.level - hoursElapsed);
+            data.lastChecked = now;
+            localStorage.setItem(key, JSON.stringify(data));
+        }
+    } else {
+        data.lastChecked = now;
         localStorage.setItem(key, JSON.stringify(data));
     }
     return data.level;
@@ -482,9 +494,9 @@ function getHungerLevel() {
 
 function feedKobi(amount = 15) {
     const key = `kobi_hunger_${userId}`;
-    const data = JSON.parse(localStorage.getItem(key) || '{"level":30,"lastFed":""}');
+    const data = JSON.parse(localStorage.getItem(key) || '{"level":100,"lastChecked":""}');
     data.level = Math.min(100, data.level + amount);
-    data.lastFed = new Date().toISOString().slice(0,10);
+    data.lastChecked = Date.now();
     localStorage.setItem(key, JSON.stringify(data));
 
     // 浮現 +% 提示
@@ -1250,7 +1262,18 @@ function updateUI() {
     document.getElementById('weekExpense').innerText = `$${weekExp.toLocaleString()}`;
     document.getElementById('weekCount').innerText = `${weekRecs.length}筆`;
 
-    // 本期紀錄列表（含顯示更多）
+    // 夢想基金摳比留言
+    const dreamMsg = document.getElementById('dreamKobiMsg');
+    if (dreamMsg) {
+        if (dreamFund === 0) dreamMsg.innerText = '🐹 快來設定你的第一個夢想吧！';
+        else if (dreamFund < 1000) dreamMsg.innerText = '🌱 夢想的種子已經種下了！';
+        else if (dreamFund < 5000) dreamMsg.innerText = '💙 摳比替你好好守著這筆錢！';
+        else dreamMsg.innerText = '🎉 哇！你存了好多！夢想快實現了！';
+    }
+
+    // 夢想空白狀態
+    const emptyState = document.getElementById('dreamEmptyState');
+    if (emptyState) emptyState.style.display = dreams.length === 0 ? 'block' : 'none';
     const list = document.getElementById('listItems');
     list.innerHTML = '';
     const sorted = [...records].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -1284,6 +1307,11 @@ function updateUI() {
     dreams.forEach(d => {
         const percent = Math.min((dreamFund / d.target) * 100, 100).toFixed(1);
         const shortfall = Math.max(d.target - dreamFund, 0);
+        const kobiDreamPhrase = percent >= 100 ? '🎊 摳比快忍不住了！快去實現吧！'
+            : percent >= 75 ? `🥹 差一點點了！摳比好期待！`
+            : percent >= 50 ? `💙 過一半了！摳比替你開心！`
+            : percent >= 25 ? `🌱 已經有進展了！繼續加油！`
+            : `🐹 摳比相信你一定做得到！`;
         const card = document.createElement('div');
         card.className = 'dream-card';
         card.innerHTML = `
@@ -1297,7 +1325,8 @@ function updateUI() {
                     ? `<div style="font-size:11px; color:#E07B6A; background:#FFF0EE; padding:3px 8px; border-radius:20px;">還差 $${shortfall.toLocaleString()}</div>`
                     : `<div style="font-size:11px; color:#5DBE8A; background:#E8F8EF; padding:3px 8px; border-radius:20px;">🎉 可以解鎖了！</div>`
                 }
-            </div>`;
+            </div>
+            <div style="font-size:12px; color:#bbb; margin-top:8px;">${kobiDreamPhrase}</div>`;
         card.addEventListener('click', () => askFulfillDream(d.id));
         card.querySelector('.del-btn').addEventListener('click', (e) => deleteDream(e, d.id));
         dc.appendChild(card);
@@ -1456,7 +1485,7 @@ async function loadProducts() {
                         <div class="product-price">NT$ ${parseInt(p['價格']).toLocaleString()}</div>
                     </div>
                     <div class="product-actions">
-                        <a class="btn-buy" href="${p['連結']}" target="_blank" onclick="event.preventDefault(); feedKobi(15); setTimeout(()=>window.open('${p['連結']}','_blank'), 800);">🐹 幫摳比看看</a>
+                        <a class="btn-buy" href="${p['連結']}" onclick="event.preventDefault(); feedKobi(15); setTimeout(()=>window.open('${p['連結']}','_blank'), 800);">🐹 幫摳比看看</a>
                         <button class="btn-dream-add">🌟 存入夢想</button>
                     </div>
                 </div>`;
