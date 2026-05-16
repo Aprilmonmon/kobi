@@ -181,8 +181,9 @@
             <span id="kobiZzz2" class="zzz2" style="display:none;">z</span>
         </div>
         <div id="kobiStatusLabel" style="font-size:11px; color:#bbb; margin-top:6px;">今天記帳了嗎？🐹</div>
+        <!-- 連續記帳天數 -->
+        <div id="streakBadge" style="display:none; margin-top:8px; background:linear-gradient(135deg,#FFD93D,#FF8C00); color:white; padding:5px 14px; border-radius:20px; font-size:13px; font-weight:bold; box-shadow:0 2px 8px rgba(255,140,0,0.3);">🔥 連續記帳 <span id="streakDays">0</span> 天！</div>
     </div>
-    <div style="font-size:12px; color:var(--line-brown); margin-top:-8px; margin-bottom:12px; text-align:center; cursor:pointer;" id="fortuneHint">🐹 點我抽今日運勢！</div>
     <div class="balance-card">
         <div style="font-size:14px; color:#999;">本期金庫餘額</div>
         <div id="mainBalance" style="font-size:32px; font-weight:bold; color:var(--primary-blue);">$0</div>
@@ -387,7 +388,60 @@ async function executeDeleteHistory() {
     showLoading(false);
 }
 
-// ── 摳比狀態系統 ──
+// ── 連續記帳天數 ──
+function getStreak() {
+    let streak = 0;
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dateStr = d.toISOString().slice(0,10);
+        const hasRecord = records.some(r => r.date === dateStr);
+        if (hasRecord) streak++;
+        else break;
+    }
+    return streak;
+}
+
+function updateStreakBadge() {
+    const streak = getStreak();
+    const badge = document.getElementById('streakBadge');
+    const days = document.getElementById('streakDays');
+    if (!badge) return;
+    if (streak >= 2) {
+        badge.style.display = 'block';
+        days.innerText = streak;
+        // 里程碑特效
+        if (streak === 7 || streak === 30 || streak === 100) {
+            badge.style.background = 'linear-gradient(135deg, #f953c6, #b91d73)';
+        } else {
+            badge.style.background = 'linear-gradient(135deg, #FFD93D, #FF8C00)';
+        }
+    } else {
+        badge.style.display = 'none';
+    }
+}
+
+// ── 記帳後慶祝 ──
+function celebrateRecord() {
+    const streak = getStreak();
+    const todayCount = records.filter(r => r.date === new Date().toISOString().slice(0,10)).length;
+    let msg = '';
+
+    if (streak >= 7 && todayCount === 1) msg = `🎉 連續 ${streak} 天！摳比超感動！`;
+    else if (streak >= 3 && todayCount === 1) msg = `🔥 連續 ${streak} 天記帳！繼續保持！`;
+    else if (todayCount === 1) msg = `✨ 今天第一筆！摳比替你記好了！`;
+    else msg = `🐹 又記一筆！今天共 ${todayCount} 筆！`;
+
+    const el = document.getElementById('kobiSpeech');
+    if (el) {
+        el.innerText = msg;
+        el.style.transform = 'scale(1.08)';
+        setTimeout(() => el.style.transform = 'scale(1)', 300);
+    }
+    updateKobiState();
+    updateStreakBadge();
+}
 const BASE_URL = 'https://kobisavemoney.github.io/kobi/';
 const KOBI_STATES = {
     happy:   { img: 'kobi-happy.png',   cls: 'kobi-state-happy',   zzz: false },
@@ -729,6 +783,7 @@ async function loadAllData() {
     updateUI();
     updateKobiState();
     updateHungerBar();
+    updateStreakBadge();
 }
 
 async function saveDreamFund() {
@@ -755,6 +810,7 @@ async function addRecord() {
         document.getElementById('recordNote').value = '';
         updateUI();
         updateKobiState();
+        celebrateRecord();
     } catch(e) {
         showError("新增失敗：" + e.message + " (" + (e.code || "unknown") + ")");
     }
@@ -1307,6 +1363,17 @@ function updateUI() {
     dreams.forEach(d => {
         const percent = Math.min((dreamFund / d.target) * 100, 100).toFixed(1);
         const shortfall = Math.max(d.target - dreamFund, 0);
+
+        // 計算預計達成天數（根據最近記帳平均每日淨存）
+        const recentDays = 30;
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - recentDays);
+        const cutoffStr = cutoff.toISOString().slice(0,10);
+        const recentRecords = records.filter(r => r.date >= cutoffStr);
+        const recentNet = recentRecords.reduce((a,r) => r.type==='save' ? a+r.amount : a-r.amount, 0);
+        const dailyAvg = recentNet / recentDays;
+        const daysNeeded = dailyAvg > 0 && shortfall > 0 ? Math.ceil(shortfall / dailyAvg) : null;
+        const daysText = daysNeeded ? `照目前存錢速度，約還需 ${daysNeeded} 天 📅` : null;
         const kobiDreamPhrase = percent >= 100 ? '🎊 摳比快忍不住了！快去實現吧！'
             : percent >= 75 ? `🥹 差一點點了！摳比好期待！`
             : percent >= 50 ? `💙 過一半了！摳比替你開心！`
@@ -1326,7 +1393,8 @@ function updateUI() {
                     : `<div style="font-size:11px; color:#5DBE8A; background:#E8F8EF; padding:3px 8px; border-radius:20px;">🎉 可以解鎖了！</div>`
                 }
             </div>
-            <div style="font-size:12px; color:#bbb; margin-top:8px;">${kobiDreamPhrase}</div>`;
+            ${daysText ? `<div style="font-size:11px; color:#bbb; margin-top:5px;">${daysText}</div>` : ''}
+            <div style="font-size:12px; color:#bbb; margin-top:6px;">${kobiDreamPhrase}</div>`;
         card.addEventListener('click', () => askFulfillDream(d.id));
         card.querySelector('.del-btn').addEventListener('click', (e) => deleteDream(e, d.id));
         dc.appendChild(card);
