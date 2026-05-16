@@ -46,11 +46,13 @@
         .zzz { position:absolute; top:-10px; right:-10px; font-size:14px; animation: zzz-float 2s ease-in-out infinite; }
         .zzz2 { position:absolute; top:-22px; right:2px; font-size:10px; animation: zzz-float 2s ease-in-out infinite 0.7s; }
 
-        /* 飢餓條 */
+        /* 心情值條 */
         .hunger-bar-wrap { width:100%; background:#f0f0f0; border-radius:20px; height:14px; overflow:hidden; margin:8px 0; }
-        .hunger-bar-fill { height:100%; border-radius:20px; transition:width 0.6s ease; background:linear-gradient(90deg,#FFB347,#FF8C00); animation: hunger-pulse 2s ease-in-out infinite; }
+        .hunger-bar-fill { height:100%; border-radius:20px; transition:width 0.8s ease; background:linear-gradient(90deg,#FFB347,#FF8C00); animation: hunger-pulse 2s ease-in-out infinite; }
         .hunger-bar-fill.full { background:linear-gradient(90deg,#77e89a,#2ecc71); }
         .hunger-bar-fill.low { background:linear-gradient(90deg,#ff6b6b,#ee0979); }
+        .mood-plus { position:absolute; font-size:13px; font-weight:bold; color:#5DBE8A; animation: mood-float 1.2s ease-out forwards; pointer-events:none; }
+        @keyframes mood-float { 0%{opacity:1;transform:translateY(0)} 100%{opacity:0;transform:translateY(-30px)} }
         .balance-card { background: white; padding: 16px; border-radius: 20px; border: none; text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 14px; box-shadow: var(--card-shadow); }
         .settle-guide { width: 100%; background: linear-gradient(135deg, #FFF4E0, #FFE8D6); border: none; border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #9E7E6B; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: var(--card-shadow); }
         .history-item { background: white; padding: 12px 15px; border-radius: 14px; margin-bottom: 8px; width: 100%; box-sizing: border-box; border-left: 4px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-size: 14px; cursor: pointer; box-shadow: 0 1px 6px rgba(0,0,0,0.05); transition: 0.15s; }
@@ -165,8 +167,8 @@
 
 <div class="tab-group">
     <div id="btn-record" class="tab-btn active" onclick="switchPage('recordPage')">摳比記帳</div>
-    <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想金庫</div>
-    <div id="btn-shop" class="tab-btn" onclick="switchPage('shopPage')">🐹 摳比願望</div>
+    <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想盒</div>
+    <div id="btn-shop" class="tab-btn" onclick="switchPage('shopPage')">🐹 摳比的肚肚</div>
 </div>
 
 <div id="recordPage" class="page active">
@@ -252,12 +254,12 @@
                 <img id="kobiShopImg" src="https://kobisavemoney.github.io/kobi/kobi-hungry.png" class="kobi-img kobi-state-hungry" alt="摳比" style="width:80px; height:80px;">
             </div>
             <div style="flex:1;">
-                <div style="font-size:14px; font-weight:bold; color:var(--line-brown);" id="kobiHungerText">摳比肚子有點餓了⋯⋯ 🥺</div>
-                <div style="font-size:11px; color:#bbb; margin:4px 0;">飢餓度</div>
-                <div class="hunger-bar-wrap">
+                <div style="font-size:14px; font-weight:bold; color:var(--line-brown);" id="kobiHungerText">摳比今天心情普普 🐹</div>
+                <div style="font-size:11px; color:#bbb; margin:4px 0;">心情值</div>
+                <div class="hunger-bar-wrap" style="position:relative;">
                     <div class="hunger-bar-fill low" id="hungerBarFill" style="width:30%;"></div>
                 </div>
-                <div style="font-size:10px; color:#bbb;">幫摳比點願望清單補充能量！</div>
+                <div style="font-size:10px; color:#bbb;">點願望清單讓摳比開心！✨</div>
             </div>
             <div id="refreshProductsBtn" style="font-size:11px; color:var(--primary-blue-dark); cursor:pointer; font-weight:bold; white-space:nowrap; align-self:flex-start;">🔄 換一批</div>
         </div>
@@ -387,10 +389,26 @@ const KOBI_STATES = {
 };
 
 const KOBI_SPEECHES = {
-    happy:  ['哇！你連續好幾天都記帳了！摳比超感動 🥹', '你是最棒的！摳比要跳舞慶祝！💃', '繼續保持！摳比的夢想靠你了 ✨'],
-    smile:  ['今天記帳了！摳比好開心 😊', '謝謝你記帳！摳比替你守護每一分錢 🐹', '記帳是愛自己的方式！摳比挺你 💪'],
-    sad:    ['你昨天沒有來⋯⋯摳比有點難過 🥺', '沒關係，今天補記也可以！摳比等你 💙', '摳比想你了，快回來記帳吧 🐹'],
-    sleep:  ['zzz⋯⋯摳比睡著了⋯⋯', '你好久沒來了⋯⋯摳比都在等你 😴', '輕輕地⋯⋯摳比在做夢⋯⋯'],
+    happy: [
+        '哇！你連續好幾天都記帳了！摳比超感動 🥹 今日幸運色：陽光黃 ☀️',
+        '你是最棒的！摳比要跳舞慶祝！💃 夢想越來越近了！',
+        '繼續保持！摳比的心情因你而美好 ✨ 今日幸運色：天空藍 💙',
+    ],
+    smile: [
+        '今天記帳了！摳比好開心 😊 你真的很棒！',
+        '謝謝你記帳！摳比替你守護每一分錢 🐹 今日幸運色：奶油白 🤍',
+        '記帳是愛自己的方式！摳比挺你 💪 繼續加油！',
+    ],
+    sad: [
+        '你昨天沒有來⋯⋯摳比有點難過 🥺 但沒關係，今天補記也可以！',
+        '摳比想你了，快回來記帳吧 🐹 今日幸運色：粉紅色 🌸',
+        '沒關係～人生難免有懶的時候 摳比依然愛你 💙',
+    ],
+    sleep: [
+        'zzz⋯⋯摳比睡著了⋯⋯輕輕地叫醒我吧 😴',
+        '你好久沒來了⋯⋯摳比都在等你 🐹 今日幸運色：薰衣草紫 💜',
+        '摳比在做夢⋯⋯夢裡你每天都來記帳 🌙',
+    ],
 };
 
 function getKobiMoodState() {
@@ -439,12 +457,9 @@ function showKobiSpeech() {
     const el = document.getElementById('kobiSpeech');
     if (el) {
         el.innerText = text;
-        el.style.animation = 'none';
-        el.offsetHeight;
-        el.style.animation = '';
+        el.style.transform = 'scale(1.05)';
+        setTimeout(() => el.style.transform = 'scale(1)', 200);
     }
-    // 也觸發運勢
-    window.showFortune();
 }
 
 // ── 飢餓條系統 ──
@@ -468,13 +483,27 @@ function feedKobi(amount = 15) {
     data.level = Math.min(100, data.level + amount);
     data.lastFed = new Date().toISOString().slice(0,10);
     localStorage.setItem(key, JSON.stringify(data));
-    updateHungerBar();
-    // 切換到吃東西狀態
+
+    // 浮現 +% 提示
+    const bar = document.getElementById('hungerBarFill');
+    if (bar) {
+        const plus = document.createElement('div');
+        plus.className = 'mood-plus';
+        plus.innerText = `+${amount}% 🎉`;
+        plus.style.cssText = 'position:absolute; top:-24px; left:50%; transform:translateX(-50%);';
+        bar.parentElement.style.position = 'relative';
+        bar.parentElement.appendChild(plus);
+        setTimeout(() => plus.remove(), 1200);
+    }
+
+    // 切換到開心圖片
     const img = document.getElementById('kobiShopImg');
     if (img) {
         img.src = BASE_URL + 'kobi-eating.png';
         img.className = 'kobi-img kobi-state-eating';
-        setTimeout(() => updateHungerBar(), 2000);
+        setTimeout(() => updateHungerBar(), 1800);
+    } else {
+        updateHungerBar();
     }
 }
 
@@ -492,15 +521,15 @@ function updateHungerBar() {
         if (level >= 70) {
             img.src = BASE_URL + 'kobi-full.png';
             img.className = 'kobi-img kobi-state-full';
-            text.innerText = '摳比吃飽飽，好滿足～ 😊';
+            text.innerText = '摳比今天心情超好！好開心 😊';
         } else if (level <= 30) {
             img.src = BASE_URL + 'kobi-hungry.png';
             img.className = 'kobi-img kobi-state-hungry';
-            text.innerText = '摳比肚子咕嚕咕嚕⋯⋯快餵我 🥺';
+            text.innerText = '摳比今天有點鬱悶⋯⋯ 🥺';
         } else {
             img.src = BASE_URL + 'kobi-hungry.png';
             img.className = 'kobi-img kobi-state-smile';
-            text.innerText = '摳比還好，但再餵一點也不錯 🐹';
+            text.innerText = '摳比今天心情普普 🐹';
         }
     }
 }
