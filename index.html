@@ -167,8 +167,8 @@
 
 <div class="tab-group">
     <div id="btn-record" class="tab-btn active" onclick="switchPage('recordPage')">摳比記帳</div>
-    <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想盒</div>
-    <div id="btn-shop" class="tab-btn" onclick="switchPage('shopPage')">🐹 摳比的肚肚</div>
+    <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">我的夢想盒</div>
+    <div id="btn-shop" class="tab-btn" onclick="switchPage('shopPage')">🐹 摳比肚肚</div>
 </div>
 
 <div id="recordPage" class="page active">
@@ -255,11 +255,14 @@
             </div>
             <div style="flex:1;">
                 <div style="font-size:14px; font-weight:bold; color:var(--line-brown);" id="kobiHungerText">摳比今天心情普普 🐹</div>
-                <div style="font-size:11px; color:#bbb; margin:4px 0;">心情值</div>
+                <div style="font-size:11px; color:#bbb; margin:4px 0; display:flex; justify-content:space-between; align-items:center;">
+                    <span>心情值</span>
+                    <span id="hungerLevelText" style="font-weight:bold; color:var(--line-brown);">❤️ 0 / 100</span>
+                </div>
                 <div class="hunger-bar-wrap" style="position:relative;">
                     <div class="hunger-bar-fill low" id="hungerBarFill" style="width:30%;"></div>
                 </div>
-                <div style="font-size:10px; color:#bbb;">點願望清單讓摳比開心！✨</div>
+                <div style="font-size:10px; color:#bbb;">幫摳比看看 +15 · 每天自動 -10 ☁️</div>
             </div>
             <div id="refreshProductsBtn" style="font-size:11px; color:var(--primary-blue-dark); cursor:pointer; font-weight:bold; white-space:nowrap; align-self:flex-start;">🔄 換一批</div>
         </div>
@@ -516,6 +519,12 @@ function updateHungerBar() {
 
     fill.style.width = level + '%';
     fill.className = 'hunger-bar-fill' + (level >= 70 ? ' full' : level <= 30 ? ' low' : '');
+
+    const levelText = document.getElementById('hungerLevelText');
+    if (levelText) {
+        const emoji = level >= 70 ? '💚' : level <= 30 ? '🩷' : '❤️';
+        levelText.innerText = `${emoji} ${level} / 100`;
+    }
 
     if (img && text) {
         if (level >= 70) {
