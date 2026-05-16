@@ -1263,20 +1263,7 @@ async function loadProducts() {
 // 換一批商品按鈕
 document.getElementById('refreshProductsBtn').addEventListener('click', () => loadProducts());
 
-// 修改喜好按鈕
-document.getElementById('profileEditBtn').addEventListener('click', () => {
-    // 把現有設定填回去
-    if (userProfile) {
-        ['chipGender', 'chipAge'].forEach(groupId => {
-            document.getElementById(groupId).querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-        });
-        document.getElementById('chipInterests').querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-        if (userProfile.gender) document.querySelector(`#chipGender [data-val="${userProfile.gender}"]`)?.classList.add('selected');
-        if (userProfile.age) document.querySelector(`#chipAge [data-val="${userProfile.age}"]`)?.classList.add('selected');
-        (userProfile.interests || []).forEach(v => document.querySelector(`#chipInterests [data-val="${v}"]`)?.classList.add('selected'));
-    }
-    showProfileSetup();
-});
+// 修改喜好按鈕（已移除）
 
 let userProfile = null;
 
