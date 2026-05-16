@@ -1598,7 +1598,7 @@ function initProfileChips() {
 }
 
 async function saveProfile(skipped = false) {
-    const gender = skipped ? null : (document.querySelector('#chipGender .chp.selected')?.dataset.val || null);
+    const gender = skipped ? null : (document.querySelector('#chipGender .chip.selected')?.dataset.val || null);
     const age = skipped ? null : (document.querySelector('#chipAge .chip.selected')?.dataset.val || null);
     const interests = skipped ? [] : [...document.querySelectorAll('#chipInterests .chip.selected')].map(c => c.dataset.val);
     userProfile = { gender, age, interests, setupDone: true };
@@ -1616,7 +1616,6 @@ initProfileChips();
 
 // ── 按鈕事件綁定 ──
 document.getElementById('kobiBtn').addEventListener('click', () => showKobiSpeech());
-document.getElementById('fortuneHint').addEventListener('click', () => showKobiSpeech());
 document.getElementById('settleGuideBtn').addEventListener('click', () => window.openSettleModal());
 document.getElementById('openRecordModalBtn').addEventListener('click', () => openModal('recordModal'));
 document.getElementById('openDreamModalBtn').addEventListener('click', () => openModal('dreamModal'));
