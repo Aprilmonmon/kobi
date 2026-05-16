@@ -20,8 +20,37 @@
         .tab-btn.active { color: var(--line-brown); border-bottom: 3px solid var(--line-brown); }
         .page { display: none; width: 90%; max-width: 350px; padding: 20px 0; flex-direction: column; align-items: center; }
         .page.active { display: flex !important; }
-        .kobi-container { width: 110px; height: 110px; background: #fff; border: 3px solid var(--line-brown); border-radius: 50%; display: flex; justify-content: center; align-items: center; margin-bottom: 12px; box-shadow: 0 6px 0px var(--primary-blue); cursor: pointer; transition: transform 0.15s; }
-        .kobi-container:active { transform: scale(0.95); }
+        /* ── 摳比動畫 ── */
+        @keyframes kobi-float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
+        @keyframes kobi-jump { 0%,100%{transform:translateY(0) scale(1)} 40%{transform:translateY(-18px) scale(1.05)} 60%{transform:translateY(-12px) scale(1.05)} }
+        @keyframes kobi-shake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-5px)} 40%{transform:translateX(5px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+        @keyframes kobi-sleep { 0%,100%{transform:translateY(0) rotate(-2deg)} 50%{transform:translateY(4px) rotate(2deg)} }
+        @keyframes kobi-tremble { 0%,100%{transform:translateX(0) rotate(0)} 25%{transform:translateX(-3px) rotate(-2deg)} 75%{transform:translateX(3px) rotate(2deg)} }
+        @keyframes kobi-nod { 0%,100%{transform:translateY(0) rotate(0)} 30%{transform:translateY(-6px) rotate(-3deg)} 60%{transform:translateY(2px) rotate(2deg)} }
+        @keyframes kobi-sway { 0%,100%{transform:rotate(-3deg)} 50%{transform:rotate(3deg)} }
+        @keyframes zzz-float { 0%{opacity:0;transform:translate(0,0) scale(0.5)} 50%{opacity:1} 100%{opacity:0;transform:translate(10px,-20px) scale(1)} }
+        @keyframes hunger-pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.04)} }
+
+        .kobi-img { width: 110px; height: 110px; object-fit: contain; }
+        .kobi-state-happy { animation: kobi-jump 1.2s ease-in-out infinite; }
+        .kobi-state-smile { animation: kobi-float 2.5s ease-in-out infinite; }
+        .kobi-state-sad { animation: kobi-shake 1s ease-in-out infinite; }
+        .kobi-state-sleep { animation: kobi-sleep 3s ease-in-out infinite; }
+        .kobi-state-hungry { animation: kobi-tremble 0.4s ease-in-out infinite; }
+        .kobi-state-eating { animation: kobi-nod 0.6s ease-in-out infinite; }
+        .kobi-state-full { animation: kobi-sway 2s ease-in-out infinite; }
+
+        .kobi-home-wrap { position:relative; display:flex; flex-direction:column; align-items:center; margin-bottom:4px; }
+        .kobi-speech { background:white; border-radius:16px; padding:8px 14px; font-size:13px; color:var(--line-brown); box-shadow:0 2px 10px rgba(0,0,0,0.08); margin-bottom:10px; position:relative; max-width:220px; text-align:center; }
+        .kobi-speech::after { content:''; position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); border:6px solid transparent; border-top-color:white; }
+        .zzz { position:absolute; top:-10px; right:-10px; font-size:14px; animation: zzz-float 2s ease-in-out infinite; }
+        .zzz2 { position:absolute; top:-22px; right:2px; font-size:10px; animation: zzz-float 2s ease-in-out infinite 0.7s; }
+
+        /* 飢餓條 */
+        .hunger-bar-wrap { width:100%; background:#f0f0f0; border-radius:20px; height:14px; overflow:hidden; margin:8px 0; }
+        .hunger-bar-fill { height:100%; border-radius:20px; transition:width 0.6s ease; background:linear-gradient(90deg,#FFB347,#FF8C00); animation: hunger-pulse 2s ease-in-out infinite; }
+        .hunger-bar-fill.full { background:linear-gradient(90deg,#77e89a,#2ecc71); }
+        .hunger-bar-fill.low { background:linear-gradient(90deg,#ff6b6b,#ee0979); }
         .balance-card { background: white; padding: 16px; border-radius: 20px; border: none; text-align: center; width: 100%; box-sizing: border-box; margin-bottom: 14px; box-shadow: var(--card-shadow); }
         .settle-guide { width: 100%; background: linear-gradient(135deg, #FFF4E0, #FFE8D6); border: none; border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; color: #9E7E6B; display: flex; justify-content: space-between; align-items: center; cursor: pointer; box-shadow: var(--card-shadow); }
         .history-item { background: white; padding: 12px 15px; border-radius: 14px; margin-bottom: 8px; width: 100%; box-sizing: border-box; border-left: 4px solid var(--primary-blue); display: flex; justify-content: space-between; align-items: center; font-size: 14px; cursor: pointer; box-shadow: 0 1px 6px rgba(0,0,0,0.05); transition: 0.15s; }
@@ -141,8 +170,15 @@
 </div>
 
 <div id="recordPage" class="page active">
-    <div class="kobi-container" id="kobiBtn">
-        <img src="kobi-logo.png" alt="KOBI" style="width:85%;">
+    <!-- 摳比的家 -->
+    <div class="kobi-home-wrap" id="kobiBtn" style="cursor:pointer;">
+        <div id="kobiSpeech" class="kobi-speech">🐹 點我說話！</div>
+        <div style="position:relative;">
+            <img id="kobiImg" src="https://kobisavemoney.github.io/kobi/kobi-smile.png" class="kobi-img kobi-state-smile" alt="摳比">
+            <span id="kobiZzz" class="zzz" style="display:none;">z</span>
+            <span id="kobiZzz2" class="zzz2" style="display:none;">z</span>
+        </div>
+        <div id="kobiStatusLabel" style="font-size:11px; color:#bbb; margin-top:6px;">今天記帳了嗎？🐹</div>
     </div>
     <div style="font-size:12px; color:var(--line-brown); margin-top:-8px; margin-bottom:12px; text-align:center; cursor:pointer;" id="fortuneHint">🐹 點我抽今日運勢！</div>
     <div class="balance-card">
@@ -209,19 +245,26 @@
 </div>
 
 <div id="shopPage" class="page">
-    <!-- 摳比心情區 -->
-    <div style="width:100%; background:white; border-radius:20px; padding:16px; margin-bottom:16px; box-shadow:var(--card-shadow); display:flex; align-items:center; gap:14px;">
-        <div style="font-size:42px;">🐹</div>
-        <div>
-            <div style="font-size:14px; font-weight:bold; color:var(--line-brown);">摳比今天的願望清單</div>
-            <div style="font-size:12px; color:#bbb; margin-top:2px;">幫摳比實現願望，順手點一下就好 🥺</div>
+    <!-- 摳比肚肚 -->
+    <div style="width:100%; background:white; border-radius:20px; padding:16px; margin-bottom:16px; box-shadow:var(--card-shadow);">
+        <div style="display:flex; align-items:center; gap:14px;">
+            <div style="position:relative;">
+                <img id="kobiShopImg" src="https://kobisavemoney.github.io/kobi/kobi-hungry.png" class="kobi-img kobi-state-hungry" alt="摳比" style="width:80px; height:80px;">
+            </div>
+            <div style="flex:1;">
+                <div style="font-size:14px; font-weight:bold; color:var(--line-brown);" id="kobiHungerText">摳比肚子有點餓了⋯⋯ 🥺</div>
+                <div style="font-size:11px; color:#bbb; margin:4px 0;">飢餓度</div>
+                <div class="hunger-bar-wrap">
+                    <div class="hunger-bar-fill low" id="hungerBarFill" style="width:30%;"></div>
+                </div>
+                <div style="font-size:10px; color:#bbb;">幫摳比點願望清單補充能量！</div>
+            </div>
+            <div id="refreshProductsBtn" style="font-size:11px; color:var(--primary-blue-dark); cursor:pointer; font-weight:bold; white-space:nowrap; align-self:flex-start;">🔄 換一批</div>
         </div>
-        <div id="refreshProductsBtn" style="margin-left:auto; font-size:11px; color:var(--primary-blue-dark); cursor:pointer; font-weight:bold; white-space:nowrap;">🔄 換一批</div>
     </div>
     <div id="recommendContainer" style="width:100%;">
         <div style="color:#ccc; text-align:center; padding:20px;">摳比正在想要什麼⋯⋯</div>
     </div>
-    <!-- 隱私政策 -->
     <div style="text-align:center; padding:16px 0 4px; font-size:11px; color:#ddd;">
         <a href="privacy.html" style="color:#ddd; text-decoration:none;">🔒 隱私權政策</a>
     </div>
@@ -331,7 +374,136 @@ async function executeDeleteHistory() {
     showLoading(false);
 }
 
-// ── AI 個人化每日運勢 ──
+// ── 摳比狀態系統 ──
+const BASE_URL = 'https://kobisavemoney.github.io/kobi/';
+const KOBI_STATES = {
+    happy:   { img: 'kobi-happy.png',   cls: 'kobi-state-happy',   zzz: false },
+    smile:   { img: 'kobi-smile.png',   cls: 'kobi-state-smile',   zzz: false },
+    sad:     { img: 'kobi-sad.png',     cls: 'kobi-state-sad',     zzz: false },
+    sleep:   { img: 'kobi-sleep.png',   cls: 'kobi-state-sleep',   zzz: true  },
+    hungry:  { img: 'kobi-hungry.png',  cls: 'kobi-state-hungry',  zzz: false },
+    eating:  { img: 'kobi-eating.png',  cls: 'kobi-state-eating',  zzz: false },
+    full:    { img: 'kobi-full.png',    cls: 'kobi-state-full',    zzz: false },
+};
+
+const KOBI_SPEECHES = {
+    happy:  ['哇！你連續好幾天都記帳了！摳比超感動 🥹', '你是最棒的！摳比要跳舞慶祝！💃', '繼續保持！摳比的夢想靠你了 ✨'],
+    smile:  ['今天記帳了！摳比好開心 😊', '謝謝你記帳！摳比替你守護每一分錢 🐹', '記帳是愛自己的方式！摳比挺你 💪'],
+    sad:    ['你昨天沒有來⋯⋯摳比有點難過 🥺', '沒關係，今天補記也可以！摳比等你 💙', '摳比想你了，快回來記帳吧 🐹'],
+    sleep:  ['zzz⋯⋯摳比睡著了⋯⋯', '你好久沒來了⋯⋯摳比都在等你 😴', '輕輕地⋯⋯摳比在做夢⋯⋯'],
+};
+
+function getKobiMoodState() {
+    const today = new Date().toISOString().slice(0,10);
+    const todayRecords = records.filter(r => r.date === today);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+    const twoDaysAgo = new Date(Date.now() - 172800000).toISOString().slice(0,10);
+    const yesterdayRecords = records.filter(r => r.date === yesterday);
+    const twoDaysAgoRecords = records.filter(r => r.date === twoDaysAgo);
+
+    // 連續記帳判斷
+    if (todayRecords.length && yesterdayRecords.length) return 'happy';
+    if (todayRecords.length) return 'smile';
+    if (!yesterdayRecords.length && !twoDaysAgoRecords.length) return 'sleep';
+    return 'sad';
+}
+
+function updateKobiState() {
+    const state = getKobiMoodState();
+    const cfg = KOBI_STATES[state];
+    const img = document.getElementById('kobiImg');
+    const zzz = document.getElementById('kobiZzz');
+    const zzz2 = document.getElementById('kobiZzz2');
+    const label = document.getElementById('kobiStatusLabel');
+
+    if (img) {
+        img.src = BASE_URL + cfg.img;
+        img.className = 'kobi-img ' + cfg.cls;
+    }
+    if (zzz) zzz.style.display = cfg.zzz ? 'block' : 'none';
+    if (zzz2) zzz2.style.display = cfg.zzz ? 'block' : 'none';
+
+    const labels = {
+        happy: '連續記帳中！摳比超開心 🎉',
+        smile: '今天有記帳！摳比很滿足 😊',
+        sad:   '昨天沒記帳，摳比有點難過 🥺',
+        sleep: '好久沒來了⋯⋯摳比在等你 😴',
+    };
+    if (label) label.innerText = labels[state] || '';
+}
+
+function showKobiSpeech() {
+    const state = getKobiMoodState();
+    const speeches = KOBI_SPEECHES[state] || KOBI_SPEECHES.smile;
+    const text = speeches[Math.floor(Math.random() * speeches.length)];
+    const el = document.getElementById('kobiSpeech');
+    if (el) {
+        el.innerText = text;
+        el.style.animation = 'none';
+        el.offsetHeight;
+        el.style.animation = '';
+    }
+    // 也觸發運勢
+    window.showFortune();
+}
+
+// ── 飢餓條系統 ──
+function getHungerLevel() {
+    const key = `kobi_hunger_${userId}`;
+    const data = JSON.parse(localStorage.getItem(key) || '{"level":30,"lastFed":""}');
+    // 每過一天自然扣10%
+    const today = new Date().toISOString().slice(0,10);
+    if (data.lastFed && data.lastFed !== today) {
+        const days = Math.floor((new Date(today) - new Date(data.lastFed)) / 86400000);
+        data.level = Math.max(5, data.level - days * 10);
+        data.lastFed = today;
+        localStorage.setItem(key, JSON.stringify(data));
+    }
+    return data.level;
+}
+
+function feedKobi(amount = 15) {
+    const key = `kobi_hunger_${userId}`;
+    const data = JSON.parse(localStorage.getItem(key) || '{"level":30,"lastFed":""}');
+    data.level = Math.min(100, data.level + amount);
+    data.lastFed = new Date().toISOString().slice(0,10);
+    localStorage.setItem(key, JSON.stringify(data));
+    updateHungerBar();
+    // 切換到吃東西狀態
+    const img = document.getElementById('kobiShopImg');
+    if (img) {
+        img.src = BASE_URL + 'kobi-eating.png';
+        img.className = 'kobi-img kobi-state-eating';
+        setTimeout(() => updateHungerBar(), 2000);
+    }
+}
+
+function updateHungerBar() {
+    const level = getHungerLevel();
+    const fill = document.getElementById('hungerBarFill');
+    const text = document.getElementById('kobiHungerText');
+    const img = document.getElementById('kobiShopImg');
+    if (!fill) return;
+
+    fill.style.width = level + '%';
+    fill.className = 'hunger-bar-fill' + (level >= 70 ? ' full' : level <= 30 ? ' low' : '');
+
+    if (img && text) {
+        if (level >= 70) {
+            img.src = BASE_URL + 'kobi-full.png';
+            img.className = 'kobi-img kobi-state-full';
+            text.innerText = '摳比吃飽飽，好滿足～ 😊';
+        } else if (level <= 30) {
+            img.src = BASE_URL + 'kobi-hungry.png';
+            img.className = 'kobi-img kobi-state-hungry';
+            text.innerText = '摳比肚子咕嚕咕嚕⋯⋯快餵我 🥺';
+        } else {
+            img.src = BASE_URL + 'kobi-hungry.png';
+            img.className = 'kobi-img kobi-state-smile';
+            text.innerText = '摳比還好，但再餵一點也不錯 🐹';
+        }
+    }
+}
 async function generateAIFortune() {
     const today = new Date().toDateString();
     const cacheKey = `kobi_fortune_${userId}_${today}`;
@@ -505,6 +677,8 @@ async function loadAllData() {
     }
     showLoading(false);
     updateUI();
+    updateKobiState();
+    updateHungerBar();
 }
 
 async function saveDreamFund() {
@@ -527,10 +701,10 @@ async function addRecord() {
         const ref = await addDoc(uCol("records"), { date, type, category, amount, note });
         records.push({ id: ref.id, date, type, category, amount, note });
         closeModal('recordModal');
-        // 清空欄位，讓 placeholder 重新出現
         document.getElementById('recordAmount').value = '';
         document.getElementById('recordNote').value = '';
         updateUI();
+        updateKobiState();
     } catch(e) {
         showError("新增失敗：" + e.message + " (" + (e.code || "unknown") + ")");
     }
@@ -1244,7 +1418,7 @@ async function loadProducts() {
                         <div class="product-price">NT$ ${parseInt(p['價格']).toLocaleString()}</div>
                     </div>
                     <div class="product-actions">
-                        <a class="btn-buy" href="${p['連結']}" target="_blank">🐹 幫摳比看看</a>
+                        <a class="btn-buy" href="${p['連結']}" target="_blank" onclick="feedKobi(15)">🐹 幫摳比看看</a>
                         <button class="btn-dream-add">🌟 存入夢想</button>
                     </div>
                 </div>`;
@@ -1306,8 +1480,8 @@ document.getElementById('profileSkipBtn').addEventListener('click', async () => 
 initProfileChips();
 
 // ── 按鈕事件綁定 ──
-document.getElementById('kobiBtn').addEventListener('click', () => window.showFortune());
-document.getElementById('fortuneHint').addEventListener('click', () => window.showFortune());
+document.getElementById('kobiBtn').addEventListener('click', () => showKobiSpeech());
+document.getElementById('fortuneHint').addEventListener('click', () => showKobiSpeech());
 document.getElementById('settleGuideBtn').addEventListener('click', () => window.openSettleModal());
 document.getElementById('openRecordModalBtn').addEventListener('click', () => openModal('recordModal'));
 document.getElementById('openDreamModalBtn').addEventListener('click', () => openModal('dreamModal'));
