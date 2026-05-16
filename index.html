@@ -1553,7 +1553,7 @@ async function loadProducts() {
                         <div class="product-price">NT$ ${parseInt(p['價格']).toLocaleString()}</div>
                     </div>
                     <div class="product-actions">
-                        <a class="btn-buy" href="${p['連結']}" onclick="event.preventDefault(); feedKobi(15); setTimeout(()=>{ const url='${p['連結']}'; if(typeof liff!=='undefined'&&liff.isInClient()){liff.openWindow({url:url,external:true})}else{window.open(url,'_blank')} }, 800);">🐹 幫摳比看看</a>
+                        <a class="btn-buy" href="${p['連結']}" onclick="event.preventDefault(); feedKobi(15); const _url=this.href; setTimeout(()=>{ if(typeof liff!=='undefined'&&liff.isInClient()){liff.openWindow({url:_url,external:true})}else{window.open(_url,'_blank')} }, 800);">🐹 幫摳比看看</a>
                         <button class="btn-dream-add">🌟 存入夢想</button>
                     </div>
                 </div>`;
@@ -1598,7 +1598,7 @@ function initProfileChips() {
 }
 
 async function saveProfile(skipped = false) {
-    const gender = skipped ? null : (document.querySelector('#chipGender .chip.selected')?.dataset.val || null);
+    const gender = skipped ? null : (document.querySelector('#chipGender .chp.selected')?.dataset.val || null);
     const age = skipped ? null : (document.querySelector('#chipAge .chip.selected')?.dataset.val || null);
     const interests = skipped ? [] : [...document.querySelectorAll('#chipInterests .chip.selected')].map(c => c.dataset.val);
     userProfile = { gender, age, interests, setupDone: true };
