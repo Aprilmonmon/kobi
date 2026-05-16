@@ -137,7 +137,7 @@
 <div class="tab-group">
     <div id="btn-record" class="tab-btn active" onclick="switchPage('recordPage')">摳比記帳</div>
     <div id="btn-dream" class="tab-btn" onclick="switchPage('dreamPage')">夢想金庫</div>
-    <div id="btn-shop" class="tab-btn" onclick="switchPage('shopPage')">摳摳福利社</div>
+    <div id="btn-shop" class="tab-btn" onclick="switchPage('shopPage')">🐹 摳比願望</div>
 </div>
 
 <div id="recordPage" class="page active">
@@ -209,15 +209,21 @@
 </div>
 
 <div id="shopPage" class="page">
-    <div style="width:100%; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <b style="font-size:18px;">🛍️ 摳比福利社</b>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <div id="refreshProductsBtn" style="font-size:12px; color:var(--primary-blue); cursor:pointer; font-weight:bold;">🔄 換一批</div>
-            <div id="profileEditBtn" style="font-size:12px; color:var(--line-brown); cursor:pointer;">⚙️ 修改喜好</div>
+    <!-- 摳比心情區 -->
+    <div style="width:100%; background:white; border-radius:20px; padding:16px; margin-bottom:16px; box-shadow:var(--card-shadow); display:flex; align-items:center; gap:14px;">
+        <div style="font-size:42px;">🐹</div>
+        <div>
+            <div style="font-size:14px; font-weight:bold; color:var(--line-brown);">摳比今天的願望清單</div>
+            <div style="font-size:12px; color:#bbb; margin-top:2px;">幫摳比實現願望，順手點一下就好 🥺</div>
         </div>
+        <div id="refreshProductsBtn" style="margin-left:auto; font-size:11px; color:var(--primary-blue-dark); cursor:pointer; font-weight:bold; white-space:nowrap;">🔄 換一批</div>
     </div>
     <div id="recommendContainer" style="width:100%;">
-        <div style="color:#ccc; text-align:center; padding:20px; border:1px dashed #ccc; border-radius:15px;">商品載入中...</div>
+        <div style="color:#ccc; text-align:center; padding:20px;">摳比正在想要什麼⋯⋯</div>
+    </div>
+    <!-- 隱私政策 -->
+    <div style="text-align:center; padding:16px 0 4px; font-size:11px; color:#ddd;">
+        <a href="privacy.html" style="color:#ddd; text-decoration:none;">🔒 隱私權政策</a>
     </div>
 </div>
 
@@ -1184,6 +1190,31 @@ function shuffleAndPick(arr, min = 4, max = 6) {
     return shuffled.slice(0, count);
 }
 
+// 摳比對不同商品類型的個性語句
+const kobiPhrases = {
+    beauty: ['好想擁有這個～ 🥺', '摳比覺得這個超讚！', '用了一定變更美 ✨', '這個摳比想試試看！'],
+    fashion: ['穿這個一定超帥氣！', '摳比好想要這件 🐹', '這個好好看！快看看！', '摳比今天突然很想要這個'],
+    food: ['摳比肚子餓了啦 🍜', '這個看起來好好吃！', '摳比想吃這個～', '幫摳比點一下嘛 😋'],
+    '3c': ['這個好酷！摳比想研究！', '科技感十足！', '摳比好奇這個是什麼 📱', '這個摳比看很久了！'],
+    home: ['放在家裡一定很棒！', '摳比想佈置小窩 🏠', '這個好療癒喔！', '摳比覺得家裡需要這個'],
+    travel: ['摳比想出去玩！✈️', '帶著這個去旅行吧！', '摳比今天想曬太陽 🌞', '出遊必備！摳比認證'],
+    sport: ['摳比最近想運動！🏃', '這個看起來很專業！', '健康最重要！摳比說的', '摳比想一起去運動！'],
+    book: ['摳比想學新東西 📚', '這個摳比也想看！', '充實自己，摳比支持！', '一起變聰明吧！'],
+    default: ['摳比好想要這個 🥺', '這個看起來不錯耶！', '摳比覺得你會喜歡！', '點進去看看嘛～ 🐹'],
+};
+
+function getKobiPhrase(tags) {
+    if (!tags) return kobiPhrases.default[Math.floor(Math.random() * kobiPhrases.default.length)];
+    const tagStr = tags.toLowerCase();
+    for (const key of Object.keys(kobiPhrases)) {
+        if (key !== 'default' && tagStr.includes(key)) {
+            const arr = kobiPhrases[key];
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+    }
+    return kobiPhrases.default[Math.floor(Math.random() * kobiPhrases.default.length)];
+}
+
 async function loadProducts() {
     const container = document.getElementById('recommendContainer');
     try {
@@ -1191,33 +1222,32 @@ async function loadProducts() {
         const text = await res.text();
         const products = parseCSV(text);
 
-        // 根據用戶輪廓篩選，再隨機抽4-6個
-        const filtered = products.filter(p => matchProfile(p['標籤'], userProfile));
-        const toShow = shuffleAndPick(filtered);
+        // 不再篩選，直接隨機抽4-6個
+        const toShow = shuffleAndPick(products);
 
         if (!toShow.length) {
-            container.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px; border:1px dashed #ccc; border-radius:15px;">目前沒有符合你喜好的商品</div>';
+            container.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px; border-radius:15px;">摳比今天沒有特別想要的東西⋯⋯</div>';
             return;
         }
 
         container.innerHTML = '';
         toShow.forEach(p => {
+            const phrase = getKobiPhrase(p['標籤']);
             const card = document.createElement('div');
             card.className = 'product-card';
             card.innerHTML = `
-                <img class="product-img" src="${p['圖片網址'] || ''}" alt="${p['名稱']}" onerror="this.style.background='#f0f0f0'; this.src=''">
+                <img class="product-img" src="${p['圖片網址'] || ''}" alt="${p['名稱']}" onerror="this.style.background='#f5f0ec'; this.src=''">
                 <div class="product-info">
+                    <div style="font-size:11px; color:var(--line-brown); background:#FFF4E0; padding:3px 8px; border-radius:20px; display:inline-block; margin-bottom:5px;">${phrase}</div>
                     <div class="product-name">${p['名稱']}</div>
                     <div>
                         <div class="product-price">NT$ ${parseInt(p['價格']).toLocaleString()}</div>
-                        <div class="product-price-label">摳比嚴選 · 點擊查看詳情</div>
                     </div>
                     <div class="product-actions">
-                        <a class="btn-buy" href="${p['連結']}" target="_blank">👀 去看看</a>
-                        <button class="btn-dream-add">🌟 加入夢想</button>
+                        <a class="btn-buy" href="${p['連結']}" target="_blank">🐹 幫摳比看看</a>
+                        <button class="btn-dream-add">🌟 存入夢想</button>
                     </div>
                 </div>`;
-            // 加入夢想清單
             card.querySelector('.btn-dream-add').addEventListener('click', () => {
                 document.getElementById('dreamName').value = p['名稱'];
                 document.getElementById('dreamTarget').value = p['價格'];
@@ -1226,7 +1256,7 @@ async function loadProducts() {
             container.appendChild(card);
         });
     } catch(e) {
-        container.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px; border:1px dashed #ccc; border-radius:15px;">商品載入失敗，請稍後再試</div>';
+        container.innerHTML = '<div style="color:#ccc; text-align:center; padding:20px; border-radius:15px;">商品載入失敗，請稍後再試</div>';
     }
 }
 
@@ -1340,9 +1370,6 @@ async function init() {
 
 init();
 </script>
-    <div style="text-align:center; padding:20px; font-size:11px; color:#ccc;">
-  <a href="privacy.html" style="color:#ccc;">隱私權政策</a>
-</div>
 
 </body>
 </html>
