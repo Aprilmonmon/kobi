@@ -1553,7 +1553,7 @@ async function loadProducts() {
                         <div class="product-price">NT$ ${parseInt(p['價格']).toLocaleString()}</div>
                     </div>
                     <div class="product-actions">
-                        <a class="btn-buy" href="${p['連結']}" target="_blank" onclick="feedKobi(15);">🐹 幫摳比看看</a>
+                        <a class="btn-buy" href="${p['連結']}" target="_blank" data-link="${p['連結']}">🐹 幫摳比看看</a>
                         <button class="btn-dream-add">🌟 存入夢想</button>
                     </div>
                 </div>`;
@@ -1562,6 +1562,20 @@ async function loadProducts() {
                 document.getElementById('dreamTarget').value = p['價格'];
                 openModal('dreamModal');
             });
+            // 幫摳比看看按鈕
+            const buyBtn = card.querySelector('.btn-buy');
+            if (buyBtn) {
+                buyBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    feedKobi(15);
+                    const url = buyBtn.getAttribute('data-link');
+                    if (typeof liff !== 'undefined' && liff.isInClient()) {
+                        liff.openWindow({ url: url, external: true });
+                    } else {
+                        window.open(url, '_blank');
+                    }
+                });
+            }
             container.appendChild(card);
         });
     } catch(e) {
