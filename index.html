@@ -391,11 +391,8 @@ async function executeDeleteHistory() {
 // ── 連續記帳天數 ──
 function getStreak() {
     let streak = 0;
-    const today = new Date();
     for (let i = 0; i < 365; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        const dateStr = d.toISOString().slice(0,10);
+        const dateStr = getTWDate(-i);
         const hasRecord = records.some(r => r.date === dateStr);
         if (hasRecord) streak++;
         else break;
@@ -476,15 +473,22 @@ const KOBI_SPEECHES = {
     ],
 };
 
+// 取得台灣時區日期字串
+function getTWDate(offsetDays = 0) {
+    const d = new Date();
+    d.setHours(d.getHours() + 8); // UTC+8
+    d.setDate(d.getDate() + offsetDays);
+    return d.toISOString().slice(0,10);
+}
+
 function getKobiMoodState() {
-    const today = new Date().toISOString().slice(0,10);
+    const today = getTWDate(0);
+    const yesterday = getTWDate(-1);
+    const twoDaysAgo = getTWDate(-2);
     const todayRecords = records.filter(r => r.date === today);
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
-    const twoDaysAgo = new Date(Date.now() - 172800000).toISOString().slice(0,10);
     const yesterdayRecords = records.filter(r => r.date === yesterday);
     const twoDaysAgoRecords = records.filter(r => r.date === twoDaysAgo);
 
-    // 連續記帳判斷
     if (todayRecords.length && yesterdayRecords.length) return 'happy';
     if (todayRecords.length) return 'smile';
     if (!yesterdayRecords.length && !twoDaysAgoRecords.length) return 'sleep';
@@ -1306,8 +1310,9 @@ function updateUI() {
     netEl.style.color = total >= 0 ? '#77b5fe' : '#C0715A';
 
     // 今日/本週快速摘要
-    const todayStr = new Date().toISOString().slice(0,10);
+    const todayStr = getTWDate(0);
     const now = new Date();
+    now.setHours(now.getHours() + 8);
     const weekStart = new Date(now);
     weekStart.setDate(now.getDate() - now.getDay());
     const weekStartStr = weekStart.toISOString().slice(0,10);
