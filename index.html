@@ -306,7 +306,7 @@
     </div>
     <select id="recordType"><option value="spend">支出 / 購買</option><option value="save">收入 / 存錢</option></select>
     <select id="recordCategory"></select>
-    <input type="number" id="recordAmount" placeholder="金額">
+    <input type="text" inputmode="decimal" id="recordAmount" placeholder="金額（可輸入算式，例如 85+40+30）">
     <textarea id="recordNote" placeholder="備註一下..." rows="2"></textarea>
     <button id="addRecordBtn" class="btn-main">確定</button>
     <button onclick="closeModal('recordModal')" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">取消</button>
@@ -324,7 +324,7 @@
     </div>
     <select id="editRecordType"><option value="spend">支出 / 購買</option><option value="save">收入 / 存錢</option></select>
     <select id="editRecordCategory"></select>
-    <input type="number" id="editRecordAmount" placeholder="金額">
+    <input type="text" inputmode="decimal" id="editRecordAmount" placeholder="金額（可輸入算式）">
     <textarea id="editRecordNote" placeholder="備註一下..." rows="2"></textarea>
     <button id="saveEditRecordBtn" class="btn-main">儲存修改</button>
     <button onclick="closeModal('editRecordModal')" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">取消</button>
@@ -811,7 +811,9 @@ async function addRecord() {
     const date = `${year}-${month}-${day}`;
     const type = document.getElementById('recordType').value;
     const category = document.getElementById('recordCategory').value;
-    const amount = parseFloat(document.getElementById('recordAmount').value);
+    const rawAmount = document.getElementById('recordAmount').value.trim();
+    let amount = 0;
+    try { amount = parseFloat(Function('"use strict"; return (' + rawAmount.replace(/[^0-9+\-*/().]/g,'') + ')')()) || 0; } catch(e) { amount = parseFloat(rawAmount) || 0; }
     const note = document.getElementById('recordNote').value;
     if (!date || !amount) return;
     showLoading(true);
@@ -887,7 +889,7 @@ document.getElementById('saveEditRecordBtn').addEventListener('click', async () 
         date: `${y}-${m}-${d}`,
         type: document.getElementById('editRecordType').value,
         category: document.getElementById('editRecordCategory').value,
-        amount: parseFloat(document.getElementById('editRecordAmount').value) || r.amount,
+        amount: (() => { const v = document.getElementById('editRecordAmount').value.trim(); try { return parseFloat(Function('"use strict"; return (' + v.replace(/[^0-9+\-*/().]/g,'') + ')')()) || r.amount; } catch(e) { return parseFloat(v) || r.amount; } })(),
         note: document.getElementById('editRecordNote').value,
     };
     showLoading(true);
