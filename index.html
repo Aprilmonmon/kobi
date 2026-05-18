@@ -476,9 +476,18 @@ const KOBI_SPEECHES = {
 // 取得台灣時區日期字串
 function getTWDate(offsetDays = 0) {
     const d = new Date();
-    d.setHours(d.getHours() + 8); // UTC+8
-    d.setDate(d.getDate() + offsetDays);
-    return d.toISOString().slice(0,10);
+    // 台灣 UTC+8，直接用本地時間格式化
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+    if (offsetDays === 0) return todayStr;
+    const base = new Date(todayStr);
+    base.setDate(base.getDate() + offsetDays);
+    const y = base.getFullYear();
+    const m = String(base.getMonth() + 1).padStart(2, '0');
+    const dd = String(base.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
 }
 
 function getKobiMoodState() {
@@ -1312,10 +1321,9 @@ function updateUI() {
     // 今日/本週快速摘要
     const todayStr = getTWDate(0);
     const now = new Date();
-    now.setHours(now.getHours() + 8);
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay());
-    const weekStartStr = weekStart.toISOString().slice(0,10);
+    const weekStart = new Date(getTWDate(0));
+    weekStart.setDate(weekStart.getDate() - now.getDay());
+    const weekStartStr = getTWDate(-now.getDay());
     const todayExp = records.filter(r => r.type==='spend' && r.date===todayStr).reduce((a,r)=>a+r.amount,0);
     const weekRecs = records.filter(r => r.date >= weekStartStr);
     const weekExp = weekRecs.filter(r => r.type==='spend').reduce((a,r)=>a+r.amount,0);
