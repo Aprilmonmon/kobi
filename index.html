@@ -504,13 +504,18 @@ const KOBI_SPEECHES = {
         '記帳是愛自己的方式！摳比挺你 💪 繼續加油！',
     ],
     sad: [
-        '你昨天沒有來⋯⋯摳比有點難過 🥺 但沒關係，今天補記也可以！',
-        '摳比想你了，快回來記帳吧 🐹 今日幸運色：粉紅色 🌸',
+        '今天還沒記帳喔～摳比在等你 🐹 今日幸運色：粉紅色 🌸',
+        '今天還沒記帳，快來記一筆吧！摳比替你守著 💙',
+        '摳比想你了，今天記一筆讓摳比開心好嗎 🥺',
+    ],
+    missedYesterday: [
+        '昨天沒有來⋯⋯摳比有點難過 🥺 但今天補記也可以！',
+        '好幾天沒見了，摳比一直在等你 🐹 今日幸運色：薰衣草紫 💜',
         '沒關係～人生難免有懶的時候 摳比依然愛你 💙',
     ],
     sleep: [
         'zzz⋯⋯摳比睡著了⋯⋯輕輕地叫醒我吧 😴',
-        '你好久沒來了⋯⋯摳比都在等你 🐹 今日幸運色：薰衣草紫 💜',
+        '你好久沒來了⋯⋯摳比都在等你 🐹',
         '摳比在做夢⋯⋯夢裡你每天都來記帳 🌙',
     ],
 };
@@ -543,12 +548,20 @@ function getKobiMoodState() {
     if (todayRecords.length && yesterdayRecords.length) return 'happy';
     if (todayRecords.length) return 'smile';
     if (!yesterdayRecords.length && !twoDaysAgoRecords.length) return 'sleep';
-    return 'sad';
+    if (!todayRecords.length && yesterdayRecords.length) return 'sad'; // 今天還沒記
+    return 'missedYesterday'; // 昨天也沒記
 }
 
 function updateKobiState() {
     const state = getKobiMoodState();
-    const cfg = KOBI_STATES[state];
+    const stateMap = {
+        happy: KOBI_STATES.happy,
+        smile: KOBI_STATES.smile,
+        sad: KOBI_STATES.sad,
+        missedYesterday: KOBI_STATES.sad,
+        sleep: KOBI_STATES.sleep,
+    };
+    const cfg = stateMap[state] || KOBI_STATES.smile;
     const img = document.getElementById('kobiImg');
     const zzz = document.getElementById('kobiZzz');
     const zzz2 = document.getElementById('kobiZzz2');
@@ -564,7 +577,8 @@ function updateKobiState() {
     const labels = {
         happy: '連續記帳中！摳比超開心 🎉',
         smile: '今天有記帳！摳比很滿足 😊',
-        sad:   '昨天沒記帳，摳比有點難過 🥺',
+        sad: '今天還沒記帳喔～摳比在等你 🐹',
+        missedYesterday: '昨天沒來⋯⋯今天補記也可以 🥺',
         sleep: '好久沒來了⋯⋯摳比在等你 😴',
     };
     if (label) label.innerText = labels[state] || '';
@@ -572,7 +586,7 @@ function updateKobiState() {
 
 function showKobiSpeech() {
     const state = getKobiMoodState();
-    const speeches = KOBI_SPEECHES[state] || KOBI_SPEECHES.smile;
+    const speeches = KOBI_SPEECHES[state] || KOBI_SPEECHES.sad;
     const text = speeches[Math.floor(Math.random() * speeches.length)];
     const el = document.getElementById('kobiSpeech');
     if (el) {
@@ -590,7 +604,7 @@ function getHungerLevel() {
     if (data.lastChecked) {
         const hoursElapsed = Math.floor((now - data.lastChecked) / 3600000);
         if (hoursElapsed > 0) {
-            data.level = Math.max(5, data.level - hoursElapsed);
+            data.level = Math.max(5, data.level - hoursElapsed * 3);
             data.lastChecked = now;
             localStorage.setItem(key, JSON.stringify(data));
         }
